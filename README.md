@@ -22,7 +22,7 @@ There’s three routes to approach this repository:
 >[!note]
 > While the primary motivation of this repository is a well-documented AES and DH implementation, the entire code-base has received equally thorough documentation!
 
-* Finally, if you want a higher-level understanding of the code base, but may not want to read raw C++ code, this repository has been documented with Doxygen, and as thus you have an interactive, HTML version of the codebase available in `docs/html`. Simply open the `index.html` with your favorite web browser, and navigate between the various namespaces and functions!
+* Finally, if you want a higher-level understanding of the code base, but may not want to read raw C++ code, this repository has been documented with Doxygen, and as thus you have an interactive, HTML version of the codebase available in `docs/html`. Simply open the `index.html` with your favorite web browser, and navigate between the various namespaces and functions! Or, if you want to browse from GitHub pages, simply go to: https://kkernick.github.io/AES-DH/ for a live version!
 ## Codebase Walkthrough
 
 > [!tip]
