@@ -1,0 +1,204 @@
+\doxysection{network.\+h}
+\hypertarget{network_8h_source}{}\label{network_8h_source}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <arpa/inet.h>}\ \ \ \ \textcolor{comment}{//\ For\ Converting\ IP/Port\ into\ the\ right\ format.}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <sys/socket.h>}\ \ \ \textcolor{comment}{//\ For\ sockets.}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <unistd.h>}\ \ \ \ \ \ \ \textcolor{comment}{//\ For\ various\ functions.}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <string.h>}\ \ \ \ \ \ \ \textcolor{comment}{//\ For\ strings.}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <poll.h>}\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ For\ the\ poll\ function\ for\ timeouts.}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <stdexcept>}\ \ \ \ \ \ \textcolor{comment}{//\ For\ exceptions.}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00013\ \textcolor{keyword}{namespace\ }\mbox{\hyperlink{namespacenetwork}{network}}\ \{}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00020\ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08}{sock}}\ =\ -\/1;}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00025\ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{connection}}\ =\ -\/1;}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00041\ \ \ \textcolor{keyword}{typedef}\ \textcolor{keyword}{enum}\ \{}
+\DoxyCodeLine{00042\ \ \ \ \ ERROR,\ EMPTY,\ DATA,\ HMAC,\ NONCE,\ IV,}
+\DoxyCodeLine{00043\ \ \ \ \ FINAL,\ MESSAGE,\ ACK,\ REFUSED,\ REEXCHANGE,}
+\DoxyCodeLine{00044\ \ \ \}\ meta;}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00046\ \ \ \textcolor{comment}{//\ The\ size\ of\ the\ buffer}}
+\DoxyCodeLine{00047\ \textcolor{preprocessor}{\ \ \#define\ PACKET\_SIZE\ 1024}}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00056\ \ \ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\{}
+\DoxyCodeLine{00057\ \ \ \ \ meta\ m\ =\ EMPTY;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Describe\ what\ the\ packet\ is.}}
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{keywordtype}{char}\ data[PACKET\_SIZE]\ =\ \{0\};\ \ \ \ \ \textcolor{comment}{//\ The\ actual\ data.}}
+\DoxyCodeLine{00059\ \ \ \}\ \mbox{\hyperlink{structnetwork_1_1packet}{packet}};}
+\DoxyCodeLine{00060\ }
+\DoxyCodeLine{00061\ }
+\DoxyCodeLine{00068\ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{namespacenetwork_a3812b264b0c3850ea556cc0dc4e337ca}{send\_packet}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structnetwork_1_1packet}{packet}}\&\ p,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\&\ timeout=5)\ \{}
+\DoxyCodeLine{00069\ \ \ \ \ \textcolor{keyword}{struct\ }pollfd\ fd;}
+\DoxyCodeLine{00070\ \ \ \ \ fd.fd\ =\ \mbox{\hyperlink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{connection}};}
+\DoxyCodeLine{00071\ \ \ \ \ fd.events\ =\ POLLOUT;}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{keywordflow}{switch}\ (poll(\&fd,\ 1,\ timeout\ *\ 1000))\ \{}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ -\/1:\ \textcolor{keywordflow}{case}\ 0:\ \textcolor{keywordflow}{return}\ -\/1;}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \textcolor{keywordflow}{default}:\ \textcolor{keywordflow}{return}\ send(\mbox{\hyperlink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{connection}},\ \textcolor{keyword}{reinterpret\_cast<}\textcolor{keyword}{const\ }\textcolor{keywordtype}{void}*\textcolor{keyword}{>}(\&p),\ \textcolor{keyword}{sizeof}(p),\ 0);}
+\DoxyCodeLine{00076\ \ \ \ \ \}}
+\DoxyCodeLine{00077\ \ \ \}}
+\DoxyCodeLine{00078\ }
+\DoxyCodeLine{00079\ }
+\DoxyCodeLine{00087\ \ \ \mbox{\hyperlink{structnetwork_1_1packet}{packet}}\ \mbox{\hyperlink{namespacenetwork_af0880c416ff05d41d94d9421d45a50ef}{recv\_packet}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\&\ timeout=5)\ \{}
+\DoxyCodeLine{00088\ \ \ \ \ \mbox{\hyperlink{structnetwork_1_1packet}{packet}}\ p;}
+\DoxyCodeLine{00089\ \ \ \ \ \textcolor{keyword}{struct\ }pollfd\ fd;}
+\DoxyCodeLine{00090\ \ \ \ \ fd.fd\ =\ \mbox{\hyperlink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{connection}};}
+\DoxyCodeLine{00091\ \ \ \ \ fd.events\ =\ POLLIN;}
+\DoxyCodeLine{00092\ }
+\DoxyCodeLine{00093\ \ \ \ \ \textcolor{keywordflow}{switch}\ (poll(\&fd,\ 1,\ timeout\ *\ 1000))\ \{}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ -\/1:\ \textcolor{keywordflow}{case}\ 0:\ p.m\ =\ network::meta::ERROR;\ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \textcolor{keywordflow}{default}:\ recv(\mbox{\hyperlink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{connection}},\ \textcolor{keyword}{reinterpret\_cast<}\textcolor{keywordtype}{void}*\textcolor{keyword}{>}(\&p),\ \textcolor{keyword}{sizeof}(p),\ 0);\ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00096\ \ \ \ \ \}}
+\DoxyCodeLine{00097\ \ \ \ \ \textcolor{keywordflow}{return}\ p;}
+\DoxyCodeLine{00098\ \ \ \}}
+\DoxyCodeLine{00099\ }
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00109\ \ \ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T>\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{namespacenetwork_a8ce2596c5463ea3c6ddbdda72ae810f4}{send\_value}}(\textcolor{keyword}{const}\ T\&\ value,\ \textcolor{keyword}{const}\ network::meta\&\ type\ =\ DATA,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\&\ timeout=5)\ \{}
+\DoxyCodeLine{00110\ \ \ \ \ \mbox{\hyperlink{structnetwork_1_1packet}{packet}}\ p\ =\ \{.m\ =\ type\};}
+\DoxyCodeLine{00111\ }
+\DoxyCodeLine{00112\ \ \ \ \ \textcolor{comment}{//\ Pack\ the\ value\ into\ a\ string.}}
+\DoxyCodeLine{00113\ \ \ \ \ std::stringstream\ in;\ in\ <<\ value;}
+\DoxyCodeLine{00114\ \ \ \ \ \textcolor{keyword}{auto}\ str\ =\ in.str();}
+\DoxyCodeLine{00115\ \ \ \ \ \textcolor{keywordflow}{if}\ (str.length()\ >\ PACKET\_SIZE)\ \{}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \textcolor{keywordflow}{throw}\ std::runtime\_error(\textcolor{stringliteral}{"{}Value\ exceeds\ packet\ size!"{}});}
+\DoxyCodeLine{00117\ \ \ \ \ \}}
+\DoxyCodeLine{00118\ \ \ \ \ strncpy(\&p.data[0],\ str.c\_str(),\ PACKET\_SIZE);}
+\DoxyCodeLine{00119\ }
+\DoxyCodeLine{00120\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{namespacenetwork_a3812b264b0c3850ea556cc0dc4e337ca}{send\_packet}}(p,\ timeout);}
+\DoxyCodeLine{00121\ \ \ \}}
+\DoxyCodeLine{00122\ }
+\DoxyCodeLine{00123\ }
+\DoxyCodeLine{00131\ \ \ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T>\ \textcolor{keyword}{inline}\ \textcolor{keyword}{const}\ T\ \mbox{\hyperlink{namespacenetwork_aece659d7f6b65d51b84c73a53c30f468}{recv\_value}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\&\ timeout=5)\ \{}
+\DoxyCodeLine{00132\ \ \ \ \ \textcolor{keyword}{auto}\ p\ =\ \mbox{\hyperlink{namespacenetwork_af0880c416ff05d41d94d9421d45a50ef}{recv\_packet}}(timeout);}
+\DoxyCodeLine{00133\ \ \ \ \ \textcolor{keywordflow}{if}\ (p.m\ =\ network::meta::ERROR)\ \textcolor{keywordflow}{throw}\ std::runtime\_error(\textcolor{stringliteral}{"{}Failed\ to\ read\ from\ socket!"{}});}
+\DoxyCodeLine{00134\ }
+\DoxyCodeLine{00135\ \ \ \ \ \textcolor{comment}{//\ Get\ the\ value\ from\ the\ string.}}
+\DoxyCodeLine{00136\ \ \ \ \ \textcolor{keyword}{auto}\ str\ =\ std::string(\&p.data[0],\ PACKET\_SIZE);}
+\DoxyCodeLine{00137\ \ \ \ \ T\ ret\ =\ \{\};}
+\DoxyCodeLine{00138\ \ \ \ \ std::istringstream\ (str)\ >>\ ret;}
+\DoxyCodeLine{00139\ \ \ \ \ \textcolor{keywordflow}{return}\ ret;}
+\DoxyCodeLine{00140\ \ \ \}}
+\DoxyCodeLine{00141\ }
+\DoxyCodeLine{00142\ }
+\DoxyCodeLine{00153\ \ \ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{namespacenetwork_ae1bd80403173048a0fc3cca5666a5c2a}{send\_string}}(\textcolor{keyword}{const}\ std::string\&\ message,\ \textcolor{keyword}{const}\ network::meta\&\ type\ =\ DATA,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\&\ timeout=5)\ \{}
+\DoxyCodeLine{00154\ }
+\DoxyCodeLine{00155\ \ \ \ \ \textcolor{comment}{//\ Send\ the\ length\ of\ the\ message,\ so\ that\ we\ can\ trim\ the\ string\ accordingly.}}
+\DoxyCodeLine{00156\ \ \ \ \ \mbox{\hyperlink{namespacenetwork_a8ce2596c5463ea3c6ddbdda72ae810f4}{send\_value<uint64\_t>}}(message.length(),\ DATA,\ timeout);}
+\DoxyCodeLine{00157\ }
+\DoxyCodeLine{00158\ \ \ \ \ \textcolor{comment}{//\ We'll\ reuse\ this\ packet\ with\ the\ correct\ type}}
+\DoxyCodeLine{00159\ \ \ \ \ \mbox{\hyperlink{structnetwork_1_1packet}{packet}}\ p\ =\ \{.m\ =\ type\};}
+\DoxyCodeLine{00160\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ x\ =\ 0;}
+\DoxyCodeLine{00161\ \ \ \ \ p.data[0]\ =\ message[0];}
+\DoxyCodeLine{00162\ }
+\DoxyCodeLine{00163\ \ \ \ \ \textcolor{comment}{//\ Simply\ increment\ through\ the\ message,\ and\ once\ we\ hit\ PACKET\_SIZE,}}
+\DoxyCodeLine{00164\ \ \ \ \ \textcolor{comment}{//\ send\ the\ package\ before\ overwriting\ the\ old\ data.}}
+\DoxyCodeLine{00165\ \ \ \ \ \textcolor{keywordflow}{for}\ (x\ =\ 1;\ x\ <\ message.length();\ ++x)\ \{}
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (x\ \%\ PACKET\_SIZE\ ==\ 0)\ \{}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespacenetwork_a3812b264b0c3850ea556cc0dc4e337ca}{send\_packet}}(p,\ timeout)\ ==\ -\/1)}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ -\/1;}
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00170\ \ \ \ \ \ \ p.data[x\ \%\ PACKET\_SIZE]\ =\ message[x];}
+\DoxyCodeLine{00171\ \ \ \ \ \}}
+\DoxyCodeLine{00172\ }
+\DoxyCodeLine{00173\ \ \ \ \ \textcolor{comment}{//\ Fill\ the\ remainder\ of\ the\ packet\ with\ 0's\ (Since\ previous\ data\ will\ be\ there)}}
+\DoxyCodeLine{00174\ \ \ \ \ \textcolor{comment}{//\ And\ then\ send\ a\ FINAL\ packet.}}
+\DoxyCodeLine{00175\ \ \ \ \ p.m\ =\ FINAL;}
+\DoxyCodeLine{00176\ \ \ \ \ \textcolor{keywordflow}{while}\ (x\ \%\ PACKET\_SIZE\ !=\ 0)\ p.data[x++\ \%\ PACKET\_SIZE]\ =\ 0;}
+\DoxyCodeLine{00177\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespacenetwork_a3812b264b0c3850ea556cc0dc4e337ca}{send\_packet}}(p,\ timeout)\ ==\ -\/1)}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ -\/1;}
+\DoxyCodeLine{00179\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00180\ \ \ \}}
+\DoxyCodeLine{00181\ }
+\DoxyCodeLine{00182\ }
+\DoxyCodeLine{00188\ \ \ \textcolor{keyword}{inline}\ std::string\ \mbox{\hyperlink{namespacenetwork_a478e5696c416be715995595225c723d1}{recv\_string}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\&\ timeout=5)\ \{}
+\DoxyCodeLine{00189\ }
+\DoxyCodeLine{00190\ \ \ \ \ \textcolor{comment}{//\ Get\ the\ string\ ready,\ and\ receive\ the\ size.}}
+\DoxyCodeLine{00191\ \ \ \ \ std::string\ ret;}
+\DoxyCodeLine{00192\ \ \ \ \ \mbox{\hyperlink{structnetwork_1_1packet}{packet}}\ p;}
+\DoxyCodeLine{00193\ }
+\DoxyCodeLine{00194\ \ \ \ \ \textcolor{keyword}{auto}\ length\ =\ \mbox{\hyperlink{namespacenetwork_aece659d7f6b65d51b84c73a53c30f468}{recv\_value<uint64\_t>}}();}
+\DoxyCodeLine{00195\ }
+\DoxyCodeLine{00196\ \ \ \ \ \textcolor{comment}{//\ Simply\ receive\ packets\ until\ the\ sender\ provides\ a\ FINAL\ packet.}}
+\DoxyCodeLine{00197\ \ \ \ \ \textcolor{keywordflow}{while}\ (\textcolor{keyword}{true})\ \{}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ p\ =\ \mbox{\hyperlink{namespacenetwork_af0880c416ff05d41d94d9421d45a50ef}{recv\_packet}}();}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (p.m\ ==\ ERROR)\ \textcolor{keywordflow}{throw}\ std::runtime\_error(\textcolor{stringliteral}{"{}Failure\ recieving\ packet!"{}});}
+\DoxyCodeLine{00200\ }
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \textcolor{comment}{//\ Just\ append\ it.}}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ ret.append(p.data,\ PACKET\_SIZE);}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (p.m\ ==\ FINAL)\ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00204\ \ \ \ \ \}}
+\DoxyCodeLine{00205\ }
+\DoxyCodeLine{00206\ \ \ \ \ \textcolor{comment}{//\ Trim\ to\ length\ and\ return.}}
+\DoxyCodeLine{00207\ \ \ \ \ \textcolor{keywordflow}{return}\ std::string(ret.c\_str(),\ length);}
+\DoxyCodeLine{00208\ \ \ \}}
+\DoxyCodeLine{00209\ }
+\DoxyCodeLine{00210\ }
+\DoxyCodeLine{00220\ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{namespacenetwork_af77a91822020a80e7f864892a47a09d3}{get\_client}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\&\ port)\ \{}
+\DoxyCodeLine{00221\ }
+\DoxyCodeLine{00222\ \ \ \ \ \textcolor{comment}{//\ Make\ our\ socket.}}
+\DoxyCodeLine{00223\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08}{sock}}\ ==\ -\/1)\ \{}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \mbox{\hyperlink{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08}{sock}}\ =\ socket(AF\_INET,\ SOCK\_STREAM,\ 0);}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08}{sock}}\ ==\ -\/1)\ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00226\ }
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \textcolor{comment}{//\ Bind\ the\ socket}}
+\DoxyCodeLine{00228\ \ \ \ \ \ \ sockaddr\_in\ serverAddress\ =\ \{}
+\DoxyCodeLine{00229\ \ \ \ \ \ \ \ \ .sin\_family\ =\ AF\_INET,}
+\DoxyCodeLine{00230\ \ \ \ \ \ \ \ \ .sin\_port\ =\ htons(port),}
+\DoxyCodeLine{00231\ \ \ \ \ \ \ \ \ .sin\_addr\ =\ \{.s\_addr\ =\ INADDR\_ANY\}}
+\DoxyCodeLine{00232\ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00233\ }
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \textcolor{comment}{//\ The\ main\ socket\ has\ a\ 30\ timeout.}}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \textcolor{comment}{//\ The\ connection\ socket}}
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \textcolor{keyword}{struct\ }timeval\ timeout;}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ timeout.tv\_sec\ =\ 30;}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ timeout.tv\_usec\ =\ 0;}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ setsockopt(\mbox{\hyperlink{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08}{sock}},\ SOL\_SOCKET,\ SO\_RCVTIMEO,\ \&timeout,\ \textcolor{keyword}{sizeof}(timeout));}
+\DoxyCodeLine{00240\ }
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (bind(\mbox{\hyperlink{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08}{sock}},\ (\textcolor{keyword}{struct}\ sockaddr*)\&serverAddress,\ \textcolor{keyword}{sizeof}(serverAddress))\ ==\ -\/1)\ \{}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ close(\mbox{\hyperlink{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08}{sock}});}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08}{sock}}\ =\ -\/1;}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00246\ \ \ \ \ \}}
+\DoxyCodeLine{00247\ }
+\DoxyCodeLine{00248\ \ \ \ \ \textcolor{comment}{//\ We\ only\ have\ a\ single\ connection}}
+\DoxyCodeLine{00249\ \ \ \ \ \textcolor{keywordflow}{if}\ (listen(\mbox{\hyperlink{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08}{sock}},\ 1)\ ==\ -\/1)\ \{}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ close(\mbox{\hyperlink{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08}{sock}});}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \mbox{\hyperlink{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08}{sock}}\ =\ -\/1;}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00253\ \ \ \ \ \}}
+\DoxyCodeLine{00254\ }
+\DoxyCodeLine{00255\ \ \ \ \ \textcolor{comment}{//\ Accept\ connections}}
+\DoxyCodeLine{00256\ \ \ \ \ sockaddr\_in\ clientAddress;}
+\DoxyCodeLine{00257\ \ \ \ \ socklen\_t\ clientSize\ =\ \textcolor{keyword}{sizeof}(clientAddress);}
+\DoxyCodeLine{00258\ \ \ \ \ \mbox{\hyperlink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{connection}}\ =\ accept(\mbox{\hyperlink{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08}{sock}},\ (\textcolor{keyword}{struct}\ sockaddr\ *)\&clientAddress,\ \&clientSize);}
+\DoxyCodeLine{00259\ \ \ \}}
+\DoxyCodeLine{00260\ }
+\DoxyCodeLine{00261\ }
+\DoxyCodeLine{00272\ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{namespacenetwork_af5cfd1ae6f77a7f0f24e88f82ef4dc12}{get\_server}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\&\ port,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ address[]\ =\ \textcolor{stringliteral}{"{}127.0.0.1"{}})\ \{}
+\DoxyCodeLine{00273\ }
+\DoxyCodeLine{00274\ \ \ \ \ \textcolor{comment}{//\ There\ is\ only\ one\ communication\ socket.}}
+\DoxyCodeLine{00275\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{connection}}\ !=\ -\/1)}
+\DoxyCodeLine{00276\ \ \ \ \ \ \ close(\mbox{\hyperlink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{connection}});}
+\DoxyCodeLine{00277\ }
+\DoxyCodeLine{00278\ \ \ \ \ \mbox{\hyperlink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{connection}}\ =\ socket(AF\_INET,\ SOCK\_STREAM,\ 0);}
+\DoxyCodeLine{00279\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{connection}}\ ==\ -\/1)\ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00280\ }
+\DoxyCodeLine{00281\ \ \ \ \ \textcolor{comment}{//\ Connect\ to\ the\ server}}
+\DoxyCodeLine{00282\ \ \ \ \ sockaddr\_in\ serverAddress\ =\ \{}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ .sin\_family\ =\ AF\_INET,}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ .sin\_port\ =\ htons(port),}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ .sin\_addr\ =\ \{.s\_addr\ =\ inet\_addr(address)\}}
+\DoxyCodeLine{00286\ \ \ \ \ \};}
+\DoxyCodeLine{00287\ }
+\DoxyCodeLine{00288\ \ \ \ \ \textcolor{keywordflow}{if}\ (connect(\mbox{\hyperlink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{connection}},\ (\textcolor{keyword}{struct}\ sockaddr\ *)\&serverAddress,\ \textcolor{keyword}{sizeof}(serverAddress))\ ==\ -\/1)\ \{}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ close(\mbox{\hyperlink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{connection}});}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \mbox{\hyperlink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{connection}}\ =\ -\/1;}
+\DoxyCodeLine{00291\ \ \ \ \ \}}
+\DoxyCodeLine{00292\ \ \ \}}
+\DoxyCodeLine{00293\ \}}
+
+\end{DoxyCode}

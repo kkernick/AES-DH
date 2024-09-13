@@ -1,0 +1,61 @@
+\doxysection{aes\+::gf Namespace Reference}
+\hypertarget{namespaceaes_1_1gf}{}\label{namespaceaes_1_1gf}\index{aes::gf@{aes::gf}}
+
+
+Helper utilities for working within a Galois Field 2\texorpdfstring{$\ast$}{*}\texorpdfstring{$\ast$}{*}8.  
+
+
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+uint8\+\_\+t \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{mult}} (uint8\+\_\+t a, uint8\+\_\+t b)
+\begin{DoxyCompactList}\small\item\em Multiply two bytes in GA(256) \end{DoxyCompactList}\item 
+uint8\+\_\+t \mbox{\hyperlink{namespaceaes_1_1gf_af5bc7611193690b722aa944f6caaf890}{inverse}} (uint8\+\_\+t a)
+\begin{DoxyCompactList}\small\item\em Find the Multiplicative Inverse of a byte in GF(2\texorpdfstring{$\ast$}{*}\texorpdfstring{$\ast$}{*}8) \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Helper utilities for working within a Galois Field 2\texorpdfstring{$\ast$}{*}\texorpdfstring{$\ast$}{*}8. 
+
+\doxysubsection{Function Documentation}
+\Hypertarget{namespaceaes_1_1gf_af5bc7611193690b722aa944f6caaf890}\index{aes::gf@{aes::gf}!inverse@{inverse}}
+\index{inverse@{inverse}!aes::gf@{aes::gf}}
+\doxysubsubsection{\texorpdfstring{inverse()}{inverse()}}
+{\footnotesize\ttfamily \label{namespaceaes_1_1gf_af5bc7611193690b722aa944f6caaf890} 
+uint8\+\_\+t aes\+::gf\+::inverse (\begin{DoxyParamCaption}\item[{uint8\+\_\+t}]{a}{}\end{DoxyParamCaption})}
+
+
+
+Find the Multiplicative Inverse of a byte in GF(2\texorpdfstring{$\ast$}{*}\texorpdfstring{$\ast$}{*}8) 
+
+
+\begin{DoxyParams}{Parameters}
+{\em a} & The value to find the inverse of. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyRemark}{Remarks}
+There are much more efficient ways to do this (Primarily just forgoing any explicit algorithm and just using a precomputed table), But for the sake of simplicity (And since there\textquotesingle{}s only 256 values to check), We can just brute force it by checking against every value. 
+\end{DoxyRemark}
+\Hypertarget{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}\index{aes::gf@{aes::gf}!mult@{mult}}
+\index{mult@{mult}!aes::gf@{aes::gf}}
+\doxysubsubsection{\texorpdfstring{mult()}{mult()}}
+{\footnotesize\ttfamily \label{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e} 
+uint8\+\_\+t aes\+::gf\+::mult (\begin{DoxyParamCaption}\item[{uint8\+\_\+t}]{a}{, }\item[{uint8\+\_\+t}]{b}{}\end{DoxyParamCaption})}
+
+
+
+Multiply two bytes in GA(256) 
+
+
+\begin{DoxyParams}{Parameters}
+{\em a} & The first byte. \\
+\hline
+{\em b} & The second byte. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyNote}{Note}
+From \href{https://gist.github.com/meagtan/dc1adff8d84bb895891d8fd027ec9d8c}{\texttt{ https\+://gist.\+github.\+com/meagtan/dc1adff8d84bb895891d8fd027ec9d8c}} 
+\end{DoxyNote}
+\begin{DoxyRemark}{Remarks}
+Most implementations would avoid this, and simply compute a 256x256 lookup table containing all values, like how Sub\+Bytes works. 
+\end{DoxyRemark}

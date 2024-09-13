@@ -1,0 +1,66 @@
+\doxysection{hmac Namespace Reference}
+\hypertarget{namespacehmac}{}\label{namespacehmac}\index{hmac@{hmac}}
+
+
+This namespace includes the functions needed to generate an HMAC value Using Open\+SSL.  
+
+
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \mbox{\hyperlink{namespacehmac_a3c1fde6727e278b329d1dd3bb4ebd4f2}{generate}} (const std\+::string \&message, const std\+::array$<$ uint64\+\_\+t, 4 $>$ \&key, const size\+\_\+t \&rounds)
+\begin{DoxyCompactList}\small\item\em Generate an HMAC for a message. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{namespacehmac_ad2f6305a655ba226d6d11f7faaf813f0}\label{namespacehmac_ad2f6305a655ba226d6d11f7faaf813f0} 
+unsigned char {\bfseries md\+\_\+value} \mbox{[}EVP\+\_\+\+MAX\+\_\+\+MD\+\_\+\+SIZE\mbox{]}
+\item 
+\Hypertarget{namespacehmac_a80056693c54c6f24dd085d8e5f9ccdcf}\label{namespacehmac_a80056693c54c6f24dd085d8e5f9ccdcf} 
+unsigned int {\bfseries md\+\_\+len} = 0
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+This namespace includes the functions needed to generate an HMAC value Using Open\+SSL. 
+
+\begin{DoxyRemark}{Remarks}
+To compile, add -\/lssl -\/lcrypto to your compiler\textquotesingle{}s arguments! 
+\end{DoxyRemark}
+
+
+\doxysubsection{Function Documentation}
+\Hypertarget{namespacehmac_a3c1fde6727e278b329d1dd3bb4ebd4f2}\index{hmac@{hmac}!generate@{generate}}
+\index{generate@{generate}!hmac@{hmac}}
+\doxysubsubsection{\texorpdfstring{generate()}{generate()}}
+{\footnotesize\ttfamily \label{namespacehmac_a3c1fde6727e278b329d1dd3bb4ebd4f2} 
+std\+::string hmac\+::generate (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{message}{, }\item[{const std\+::array$<$ uint64\+\_\+t, 4 $>$ \&}]{key}{, }\item[{const size\+\_\+t \&}]{rounds}{}\end{DoxyParamCaption})}
+
+
+
+Generate an HMAC for a message. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em message} & The string to compute the HMAC for. \\
+\hline
+{\em key} & The set of prime numbers to use as the key. \\
+\hline
+{\em rounds} & The amount of AES rounds (To determine key size) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+A string containing the HMAC value. 
+\end{DoxyReturn}
+
+\begin{DoxyExceptions}{Exceptions}
+{\em std\+::runtime\+\_\+error} & if the HMAC could not be generated. \\
+\hline
+{\em std\+::runtime\+\_\+error} & if the round amount is invalid. \\
+\hline
+\end{DoxyExceptions}
+\begin{DoxyRemark}{Remarks}
+This function uses the Open\+SSL implementation of HMAC-\/\+SHA256. 
+
+\href{https://docs.openssl.org/master/man3/HMAC/\#synopsis}{\texttt{ https\+://docs.\+openssl.\+org/master/man3/\+HMAC/\#synopsis}} 
+\end{DoxyRemark}

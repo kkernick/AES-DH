@@ -1,0 +1,809 @@
+\doxysection{aes.\+h}
+\hypertarget{aes_8h_source}{}\label{aes_8h_source}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <vector>}\ \ \ \textcolor{comment}{//\ For\ a\ collection\ of\ states}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <cstdint>}\ \ \textcolor{comment}{//\ For\ fixed\ width\ integers}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <sstream>}\ \ \textcolor{comment}{//\ For\ stringstream\ construction.}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <bitset>}\ \ \ \textcolor{comment}{//\ For\ raw\ bit\ access.}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <bit>}\ \ \ \ \ \ \textcolor{comment}{//\ For\ rotl}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <array>}\ \ \ \ \textcolor{comment}{//\ For\ the\ shared\ key\ array.}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00034\ \textcolor{keyword}{namespace\ }\mbox{\hyperlink{namespaceaes}{aes}}\ \{}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00039\ \ \ \textcolor{keyword}{namespace\ }gf\ \{}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00049\ \ \ \ \ uint8\_t\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{mult}}(uint8\_t\ a,\ uint8\_t\ b)\ \{}
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \textcolor{comment}{//\ This\ function\ looks\ confusing,\ and\ that's\ because\ it\ is,\ but\ here's\ the\ rundown:}}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \textcolor{comment}{//\ Addition\ in\ a\ finite\ field\ of\ characteristic\ 2\ (GF(2**X))\ is\ simply\ XOR.}}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \textcolor{comment}{//\ This\ is\ nice,\ because\ we\ avoid\ carries\ and\ XOR\ is\ fast.}}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \textcolor{comment}{//\ Multiplication\ operates\ identically\ to\ normal\ mutiplication\ (Meaning\ repeated\ addition,}}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \textcolor{comment}{//\ which\ in\ our\ case\ means\ XOR),\ except\ we\ mod\ each\ stage\ with\ a\ "{}Reducing\ Polynomial"{}}}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \textcolor{comment}{//\ See\ all\ of\ Section\ 4\ of\ the\ Reference\ for\ more\ details,\ but\ in\ essence\ we\ treat\ each\ byte\ as\ a}}
+\DoxyCodeLine{00056\ \ \ \ \ \ \ \textcolor{comment}{//\ polynomial\ (IE\ 0b11000001\ =\ x**8\ +\ x**7\ +\ x**0).}}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \textcolor{comment}{//\ The\ reducing\ polynomial\ for\ GF(256)\ is\ 100011011:}}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \textcolor{comment}{//\ https://en.wikipedia.org/wiki/Finite\_field\_arithmetic\#Rijndael's\_(AES)\_finite\_field}}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \textcolor{comment}{//\ And\ this\ whole\ function\ is\ in\ essence\ just\ long\ multiplication,\ how\ you\ would\ do\ it}}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \textcolor{comment}{//\ by\ hand,\ where\ we\ slowly\ move\ through\ the\ b\ value\ by\ shifting\ it\ to\ 0,\ check\ that\ shifted}}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \textcolor{comment}{//\ first\ bit\ and\ "{}add"{}\ it\ to\ the\ result\ via\ an\ xor\ of\ A,\ and\ then\ preemptively\ check}}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \textcolor{comment}{//\ for\ an\ overflow\ condition\ on\ the\ final\ bit\ of\ a\ (0x80\ =\ 128),\ which\ then\ applies\ our}}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \textcolor{comment}{//\ modulus\ to\ keep\ it\ bounded.}}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \textcolor{comment}{//\ However,\ the\ main\ question\ that\ arises\ is\ why\ do\ we\ need\ to\ use\ this\ at\ all.\ The\ Reference\ makes}}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \textcolor{comment}{//\ no\ attempt\ to\ explain\ WHY\ our\ operations\ must\ be\ performed\ in\ a\ Galois\ Field,\ and\ why\ that's\ useful.}}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \textcolor{comment}{//\ From\ what\ I've\ gathered:\ it's\ perfomance.\ Both\ addition\ and\ multiplication\ do\ not\ have}}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \textcolor{comment}{//\ to\ deal\ with\ carries,\ and\ the\ former\ is\ reduced\ to\ the\ blazing\ fast\ XOR,\ rather\ than\ the}}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \textcolor{comment}{//\ (relatively)\ complicated\ ADD.}}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \textcolor{comment}{//\ Finite\ Field\ Arithmetic\ is\ complicated,\ and\ I\ can't\ begin\ to\ scratch\ the\ surface\ of\ it}}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \textcolor{comment}{//\ in\ this\ comment\ block\ (Which\ is\ already\ monsterous),\ so\ here's\ some\ resources\ if\ you're\ interested:}}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \textcolor{comment}{//\ https://www.samiam.org/galois.html}}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \textcolor{comment}{//\ https://web.eecs.utk.edu/\string~jplank/plank/papers/CS-\/07-\/593/}}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \textcolor{comment}{//\ https://archive.org/details/finitefields0000lidl\_a8r3}}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00077\ }
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \textcolor{comment}{//\ The\ running\ result.}}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ uint8\_t\ res\ =\ 0;}
+\DoxyCodeLine{00080\ }
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \textcolor{comment}{//\ Iterate\ through\ every\ bit\ of\ b\ until\ it's\ been\ zeroed.}}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (;\ b;\ b\ >>=\ 1)\ \{}
+\DoxyCodeLine{00083\ }
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ If\ our\ current\ bit\ in\ b\ is\ a\ 1,\ then\ "{}add"{}\ a\ copy\ of\ a\ to\ the\ result.}}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (b\ \&\ 1)\ res\ \string^=\ a;}
+\DoxyCodeLine{00086\ }
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ If\ a\ is\ about\ to\ overflow\ (IE\ there's\ a\ bit\ in\ 128),\ then\ "{}mod"{}\ it\ by\ the\ reducing}}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ polynomial\ pre-\/shift.}}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (a\ \&\ 0x80)\ a\ =\ (a\ <<\ 1)\ \string^\ 0b100011011;}
+\DoxyCodeLine{00090\ }
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Otherwise,\ just\ shift\ a.}}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ a\ <<=\ 1;}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ res;}
+\DoxyCodeLine{00095\ \ \ \ \ \}}
+\DoxyCodeLine{00096\ }
+\DoxyCodeLine{00097\ }
+\DoxyCodeLine{00106\ \ \ \ \ uint8\_t\ \mbox{\hyperlink{namespaceaes_1_1gf_af5bc7611193690b722aa944f6caaf890}{inverse}}(uint8\_t\ a)\ \{}
+\DoxyCodeLine{00107\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ x\ =\ 0;\ x\ <\ 256;\ ++x)\ \{}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{mult}}(a,\ x)\ ==\ 1)\ \textcolor{keywordflow}{return}\ x;}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00111\ \ \ \ \ \}}
+\DoxyCodeLine{00112\ \ \ \}}
+\DoxyCodeLine{00113\ }
+\DoxyCodeLine{00114\ }
+\DoxyCodeLine{00118\ \ \ \textcolor{keyword}{namespace\ }key\ \{}
+\DoxyCodeLine{00119\ }
+\DoxyCodeLine{00130\ \ \ \ \ uint32\_t\ \mbox{\hyperlink{namespaceaes_1_1key_a48c4a1c357aa64e2ff50d205301ef6fd}{Rcon}}[10]\ =\ \{}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ 0x01000000,\ 0x02000000,\ 0x04000000,\ 0x08000000,\ 0x10000000,}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ 0x20000000,\ 0x40000000,\ 0x80000000,\ 0x1b000000,\ 0x36000000}
+\DoxyCodeLine{00133\ \ \ \ \ \};}
+\DoxyCodeLine{00134\ }
+\DoxyCodeLine{00135\ }
+\DoxyCodeLine{00142\ \ \ \ \ uint32\_t\ \mbox{\hyperlink{namespaceaes_1_1key_a6897098eedfdaf07c0f7b00047d053ab}{RotWord}}(\textcolor{keyword}{const}\ uint32\_t\&\ word)\ \{\textcolor{keywordflow}{return}\ std::rotl(word,\ 8);\}}
+\DoxyCodeLine{00143\ }
+\DoxyCodeLine{00152\ \ \ \ \ uint32\_t\ \mbox{\hyperlink{namespaceaes_1_1key_aa37c4a1b8399e8d6dab153bac9526f28}{SubWord}}(\textcolor{keyword}{const}\ uint32\_t\&\ word)\ \{}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ uint8\_t\ dest[4]\ =\ \{0\};}
+\DoxyCodeLine{00154\ }
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \textcolor{comment}{//\ Get\ the\ bytes}}
+\DoxyCodeLine{00156\ \ \ \ \ \ \ \textcolor{keyword}{auto}*\ bytes\ =\ \textcolor{keyword}{reinterpret\_cast<}\textcolor{keyword}{const\ }uint8\_t*\textcolor{keyword}{>}(\&word);}
+\DoxyCodeLine{00157\ }
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ x\ =\ 0;\ x\ <\ 4;\ ++x)\ \{}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ See\ state\_array::SubBytes\ for\ an\ explanation\ of\ what\ this\ does.}}
+\DoxyCodeLine{00160\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ uint8\_t\ \textcolor{keywordtype}{byte}\ =\ bytes[x];}
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ std::bitset<8>\ i\ =\ \mbox{\hyperlink{namespaceaes_1_1gf_af5bc7611193690b722aa944f6caaf890}{gf::inverse}}(\textcolor{keywordtype}{byte}),\ c\ =\ 0b01100011,\ result\ =\ 0;}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ x\ =\ 0;\ x\ <\ 8;\ ++x)\ \{}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \ \ result[x]\ =\ i[x]\ \string^\ i[(x\ +\ 4)\ \%\ 8]\ \string^\ i[(x\ +\ 5)\ \%\ 8]\ \string^\ i[(x\ +\ 6)\ \%\ 8]\ \string^\ i[(x\ +\ 7)\ \%\ 8]\ \string^\ c[x];}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ dest[x]\ =\ uint8\_t(result.to\_ulong());}
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00167\ }
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \textcolor{comment}{//\ Bundle\ our\ bytes\ back\ into\ a\ word.}}
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{reinterpret\_cast<}uint32\_t*\textcolor{keyword}{>}(\&dest[0]);}
+\DoxyCodeLine{00170\ \ \ \ \ \}}
+\DoxyCodeLine{00171\ }
+\DoxyCodeLine{00193\ \ \ \ \ std::vector<uint32\_t>\ \mbox{\hyperlink{namespaceaes_1_1key_ad91c7cb9402fbe2fa12cb7ca048dd58a}{Expansion}}(\textcolor{keyword}{const}\ std::array<uint64\_t,\ 4>\&\ key,\ \textcolor{keyword}{const}\ uint64\_t\&\ Nk)\ \{}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ i\ =\ 0;}
+\DoxyCodeLine{00195\ }
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \textcolor{comment}{//\ Break\ each\ 64\ bit\ key\ into\ two\ 32\ bit\ words.}}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ std::vector<uint32\_t>\ words;}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ x\ =\ 0;\ x\ <\ 4;\ ++x)\ \{}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ words.emplace\_back(key[x]\ \&\ 0xffffffff);}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ words.emplace\_back(key[x]\ >>\ 32);}
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00202\ }
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \textcolor{comment}{//\ The\ number\ of\ rounds\ depends\ on\ the\ size\ of\ the\ key.}}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \textcolor{comment}{//\ Nk\ =\ 4,6,8\ if\ AES\ 128,192,256.}}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ uint64\_t\ Nr\ =\ Nk\ ==\ 4\ ?\ 10\ :\ Nk\ ==\ 6\ ?\ 12\ :\ 14;}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \textcolor{keyword}{auto}\ w\ =\ std::vector<uint32\_t>(4*Nr\ +\ 4,\ 0);}
+\DoxyCodeLine{00207\ }
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \textcolor{comment}{//\ The\ first\ Nk\ words\ of\ the\ expanded\ key\ are\ the\ key\ itself.}}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (;\ i\ <\ Nk;\ ++i)}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ w[i]\ =\ words[i];}
+\DoxyCodeLine{00211\ }
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \textcolor{comment}{//\ This\ part\ of\ the\ algorithm\ is\ where\ things\ get\ confusing.}}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \textcolor{comment}{//\ In\ essence,\ AES\ mutates\ the\ key\ by\ taking\ the\ last\ wprd,}}
+\DoxyCodeLine{00214\ \ \ \ \ \ \ \textcolor{comment}{//\ And\ then\ performing\ a\ Subtitution\ step\ (SubWord\ like\ SubBytes),}}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \textcolor{comment}{//\ and\ then\ a\ transposition\ step\ (RotWord,\ like\ ShiftRows).\ By\ using\ the}}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \textcolor{comment}{//\ previous\ word,\ (Alongside\ An\ XOR\ with\ i\ -\/\ Nk),\ we're\ generating\ enough}}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \textcolor{comment}{//\ words\ to\ perform\ all\ the\ rounds\ AES\ from\ the\ original\ 4/6/8\ that\ all}}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \textcolor{comment}{//\ depend\ on\ the\ original\ key.}}
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00220\ \ \ \ \ \ \ \textcolor{keywordflow}{for}(;\ i\ <\ 4*Nr\ +\ 3;\ ++i)\ \{}
+\DoxyCodeLine{00221\ }
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Store\ the\ last\ word\ into\ temp.}}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ uint32\_t\ temp\ =\ w[i\ -\/\ 1];}
+\DoxyCodeLine{00224\ }
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ If\ our\ current\ iteration\ falls\ within\ the\ round\ constants,\ XOR\ it.}}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (i\ \%\ Nk\ ==\ 0)}
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \ \ \ \ temp\ =\ \mbox{\hyperlink{namespaceaes_1_1key_aa37c4a1b8399e8d6dab153bac9526f28}{SubWord}}(\mbox{\hyperlink{namespaceaes_1_1key_a6897098eedfdaf07c0f7b00047d053ab}{RotWord}}(temp))\ \string^\ \mbox{\hyperlink{namespaceaes_1_1key_a48c4a1c357aa64e2ff50d205301ef6fd}{Rcon}}[i\ /\ Nk];}
+\DoxyCodeLine{00228\ }
+\DoxyCodeLine{00229\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ This\ only\ applies\ for\ AES-\/256.}}
+\DoxyCodeLine{00230\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (Nk\ >\ 6\ \&\&\ i\ \%\ Nk\ ==\ 4)\ \{}
+\DoxyCodeLine{00231\ \ \ \ \ \ \ \ \ \ \ temp\ =\ \mbox{\hyperlink{namespaceaes_1_1key_aa37c4a1b8399e8d6dab153bac9526f28}{SubWord}}(temp);}
+\DoxyCodeLine{00232\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00233\ \ \ \ \ \ \ \ \ w[i]\ =\ w[i\ -\/\ Nk]\ \string^\ temp;}
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ w;}
+\DoxyCodeLine{00236\ \ \ \ \ \}}
+\DoxyCodeLine{00237\ \ \ \}}
+\DoxyCodeLine{00238\ }
+\DoxyCodeLine{00239\ }
+\DoxyCodeLine{00248\ \ \ \textcolor{keyword}{class\ }\mbox{\hyperlink{classaes_1_1state__array}{state\_array}}\ \{}
+\DoxyCodeLine{00249\ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00250\ }
+\DoxyCodeLine{00251\ \ \ \ \ \textcolor{comment}{//\ The\ state\ array\ is\ fixed\ in\ size;\ usually,\ we\ can\ assume}}
+\DoxyCodeLine{00252\ \ \ \ \ \textcolor{comment}{//\ that\ char\ is\ a\ byte,\ but\ we'll\ use\ the\ explicit,\ fixed\ width}}
+\DoxyCodeLine{00253\ \ \ \ \ \textcolor{comment}{//\ uint8\ to\ ensure\ that\ each\ entry\ in\ the\ array\ is\ 8\ bits.}}
+\DoxyCodeLine{00254\ \ \ \ \ std::array<std::array<uint8\_t,\ 4>,\ 4>\ array;}
+\DoxyCodeLine{00255\ }
+\DoxyCodeLine{00256\ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00257\ }
+\DoxyCodeLine{00263\ \ \ \ \ \mbox{\hyperlink{classaes_1_1state__array_a6acecad29d8a66119e3cd1119d14540d}{state\_array}}(\textcolor{keyword}{const}\ std::string\&\ in,\ \textcolor{keywordtype}{size\_t}\&\ x)\ \{}
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \textcolor{keyword}{auto}\ length\ =\ in.length();}
+\DoxyCodeLine{00265\ }
+\DoxyCodeLine{00266\ \ \ \ \ \ \ uint8\_t\ i\ =\ 0;}
+\DoxyCodeLine{00267\ }
+\DoxyCodeLine{00268\ \ \ \ \ \ \ \textcolor{comment}{//\ The\ syntax\ here\ might\ look\ a\ little\ weird,\ but\ this\ maps\ the\ 16\ bytes\ to\ the\ row/col\ scheme:}}
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \textcolor{comment}{//\ 0:\ array[0\ /\ 4][0\ \%\ 4]\ =\ array[0][0]}}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \textcolor{comment}{//\ 1:\ array[1\ /\ 4][1\ \%\ 4]\ =\ array[0][1]}}
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \textcolor{comment}{//\ 2:\ array[2\ /\ 4][2\ \%\ 4]\ =\ array[0][2]}}
+\DoxyCodeLine{00272\ \ \ \ \ \ \ \textcolor{comment}{//\ 3:\ array[3\ /\ 4][3\ \%\ 4]\ =\ array[0][3]}}
+\DoxyCodeLine{00273\ \ \ \ \ \ \ \textcolor{comment}{//\ 4:\ array[4\ /\ 4][4\ \%\ 4]\ =\ array[1][0]}}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \textcolor{comment}{//\ ...}}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \textcolor{comment}{//\ 12:\ array[12\ /\ 4][12\ \%\ 4]\ =\ array[3][0]}}
+\DoxyCodeLine{00276\ \ \ \ \ \ \ \textcolor{comment}{//\ 13:\ array[13\ /\ 4][13\ \%\ 4]\ =\ array[3][1]}}
+\DoxyCodeLine{00277\ \ \ \ \ \ \ \textcolor{comment}{//\ 14:\ array[14\ /\ 4][14\ \%\ 4]\ =\ array[3][2]}}
+\DoxyCodeLine{00278\ \ \ \ \ \ \ \textcolor{comment}{//\ 15:\ array[15\ /\ 4][15\ \%\ 4]\ =\ array[3][3]}}
+\DoxyCodeLine{00279\ }
+\DoxyCodeLine{00280\ \ \ \ \ \ \ \textcolor{comment}{//\ Populate\ the\ array\ with\ bytes\ from\ the\ string.}}
+\DoxyCodeLine{00281\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (;\ x\ <\ length\ \&\&\ i\ <\ 16;\ ++i,\ ++x)\ array[i\ /\ 4][i\ \%\ 4]\ =\ in[x];}
+\DoxyCodeLine{00282\ }
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \textcolor{comment}{//\ Initialize\ the\ remainder\ of\ the\ array\ should\ the\ string\ be\ exhausted.}}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (;\ i\ <\ 16;\ ++i)\ array[i\ /\ 4][i\ \%\ 4]\ =\ 0;}
+\DoxyCodeLine{00285\ \ \ \ \ \}}
+\DoxyCodeLine{00286\ }
+\DoxyCodeLine{00287\ }
+\DoxyCodeLine{00288\ \ \ \ \ \textcolor{comment}{//\ Initialize\ from\ a\ string,\ taking\ 16\ bytes\ or\ the\ length.}}
+\DoxyCodeLine{00289\ \ \ \ \ \mbox{\hyperlink{classaes_1_1state__array}{state\_array}}(\textcolor{keyword}{const}\ std::string\&\ in)\ \{}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \textcolor{keyword}{auto}\ length\ =\ in.length();}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ i\ =\ 0;\ i\ <\ 16;\ ++i)}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ array[i\ /\ 4][i\ \%\ 4]\ =\ i\ <\ length\ ?\ in[i]\ :\ 0;}
+\DoxyCodeLine{00293\ \ \ \ \ \}}
+\DoxyCodeLine{00294\ }
+\DoxyCodeLine{00295\ }
+\DoxyCodeLine{00296\ \ \ \ \ \textcolor{comment}{//\ Copy\ constructor.}}
+\DoxyCodeLine{00297\ \ \ \ \ state\_array(\textcolor{keyword}{const}\ state\_array\&\ arr)\ \{}
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ \{}
+\DoxyCodeLine{00299\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ \ \ array[row][col]\ =\ arr.array[row][col];}
+\DoxyCodeLine{00301\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00303\ \ \ \ \ \}}
+\DoxyCodeLine{00304\ }
+\DoxyCodeLine{00305\ }
+\DoxyCodeLine{00306\ \ \ \ \ \textcolor{comment}{//\ Default\ constructor,\ populated\ with\ 0s.}}
+\DoxyCodeLine{00307\ \ \ \ \ \mbox{\hyperlink{classaes_1_1state__array_a6acecad29d8a66119e3cd1119d14540d}{state\_array}}()\ \{}
+\DoxyCodeLine{00308\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ \{}
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ \ \ array[row][col]\ =\ 0;}
+\DoxyCodeLine{00311\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00312\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00313\ \ \ \ \ \}}
+\DoxyCodeLine{00314\ }
+\DoxyCodeLine{00315\ }
+\DoxyCodeLine{00316\ \ \ \ \ \textcolor{comment}{//\ Getter.}}
+\DoxyCodeLine{00317\ \ \ \ \ \textcolor{keyword}{auto}\&\ get()\ \{\textcolor{keywordflow}{return}\ array;\}}
+\DoxyCodeLine{00318\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keyword}{auto}\&\ get()\textcolor{keyword}{\ const\ }\{\textcolor{keywordflow}{return}\ array;\}}
+\DoxyCodeLine{00319\ }
+\DoxyCodeLine{00320\ }
+\DoxyCodeLine{00321\ \ \ \ \ \textcolor{comment}{//\ Helper\ function\ for\ GCM\ to\ XOR\ two\ blocks\ together.}}
+\DoxyCodeLine{00322\ \ \ \ \ \textcolor{keywordtype}{void}\ xor\_arr(\textcolor{keyword}{const}\ state\_array\&\ arr)\ \{}
+\DoxyCodeLine{00323\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ \{}
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ \ \ array[col][row]\ \string^=\ arr.array[col][row];}
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00328\ \ \ \ \ \}}
+\DoxyCodeLine{00329\ }
+\DoxyCodeLine{00330\ }
+\DoxyCodeLine{00331\ \ \ \ \ \textcolor{comment}{//\ Helper\ function\ for\ GCM\ to\ Shift\ a\ block}}
+\DoxyCodeLine{00332\ \ \ \ \ \textcolor{keywordtype}{void}\ shift\_r(\textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\&\ bits)\ \{}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (bits\ ==\ 0)\ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00334\ }
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \textcolor{comment}{//\ Basically,\ we\ iterate\ through\ each\ block,}}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \textcolor{comment}{//\ We\ then\ shift\ it\ by\ one,\ and\ append\ the}}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \textcolor{comment}{//\ carry\ to\ the\ end\ (As\ the\ shift\ put\ a\ 0\ at\ the}}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \textcolor{comment}{//\ last\ bit\ position).}}
+\DoxyCodeLine{00339\ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \textcolor{comment}{//\ Before\ we\ do\ the\ shift,\ we\ see\ what\ value\ we're\ shifting}}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \textcolor{comment}{//\ out\ (The\ bit\ in\ position\ 1).\ And\ if\ it's\ a\ 1,\ we\ set}}
+\DoxyCodeLine{00342\ \ \ \ \ \ \ \textcolor{comment}{//\ Carry\ to\ 0b10000000,\ so\ that\ when\ we\ shift\ the\ next\ byte,}}
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \textcolor{comment}{//\ we\ are\ adding\ that\ bit\ onto\ the\ end.}}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ uint8\_t\ carry\ =\ 0;}
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ \{}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00348\ }
+\DoxyCodeLine{00349\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Get\ our\ new\ value.}}
+\DoxyCodeLine{00350\ \ \ \ \ \ \ \ \ \ \ uint8\_t\ value\ =\ (array[col][row]\ >>\ 1)\ |\ carry;}
+\DoxyCodeLine{00351\ }
+\DoxyCodeLine{00352\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Update\ the\ carry\ flag\ depending\ on\ what\ we\ shift\ off.}}
+\DoxyCodeLine{00353\ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (array[col][row]\ \&\ 1)}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ \ \ \ \ carry\ =\ 0b10000000;}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ carry\ =\ 0;}
+\DoxyCodeLine{00356\ }
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Replace.}}
+\DoxyCodeLine{00358\ \ \ \ \ \ \ \ \ \ \ array[col][row]\ =\ value;}
+\DoxyCodeLine{00359\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00360\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00361\ }
+\DoxyCodeLine{00362\ \ \ \ \ \ \ \textcolor{comment}{//\ Is\ this\ inefficient?\ Yes.\ Very.\ Because\ the\ goal\ was\ making}}
+\DoxyCodeLine{00363\ \ \ \ \ \ \ \textcolor{comment}{//\ AES\ easier\ to\ understand,\ the\ 2D\ array\ makes\ it\ easy\ to}}
+\DoxyCodeLine{00364\ \ \ \ \ \ \ \textcolor{comment}{//\ follow\ what\ AES\ is\ doing\ (IF\ we\ just\ had\ a\ 16\ byte\ array,}}
+\DoxyCodeLine{00365\ \ \ \ \ \ \ \textcolor{comment}{//\ ShiftRows\ and\ MixColumns\ would\ look\ a\ little\ strange).}}
+\DoxyCodeLine{00366\ \ \ \ \ \ \ \textcolor{comment}{//\ However,\ since\ we\ aren't\ dealing\ with\ a\ string\ of\ bytes,\ and}}
+\DoxyCodeLine{00367\ \ \ \ \ \ \ \textcolor{comment}{//\ can't\ necessarily\ trust\ that\ std::array\ is\ contigious,}}
+\DoxyCodeLine{00368\ \ \ \ \ \ \ \textcolor{comment}{//\ dealing\ with\ the\ block\ as\ a\ single\ value,\ which\ is\ what\ GCM}}
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \textcolor{comment}{//\ likes\ to\ do,\ is\ tedious.\ Fortunately,\ we\ only\ ever\ shift}}
+\DoxyCodeLine{00370\ \ \ \ \ \ \ \textcolor{comment}{//\ By\ 1\ bit,\ this\ is\ just\ for\ completeness.}}
+\DoxyCodeLine{00371\ \ \ \ \ \ \ shift\_r(bits\ -\/\ 1);}
+\DoxyCodeLine{00372\ \ \ \ \ \}}
+\DoxyCodeLine{00373\ }
+\DoxyCodeLine{00374\ }
+\DoxyCodeLine{00379\ \ \ \ \ std::string\ \mbox{\hyperlink{classaes_1_1state__array_a97f2a53d028757b6972fe7a3f81b994a}{unravel}}()\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ std::stringstream\ out;}
+\DoxyCodeLine{00381\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ \{}
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ \ \ out\ <<\ array[row][col];}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ out.str();}
+\DoxyCodeLine{00387\ \ \ \ \ \}}
+\DoxyCodeLine{00388\ }
+\DoxyCodeLine{00389\ }
+\DoxyCodeLine{00396\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classaes_1_1state__array_a51c20f9dba0cab4510a7239f258aad64}{AddRoundKey}}(\textcolor{keyword}{const}\ uint64\_t\&\ round,\ \textcolor{keyword}{const}\ std::vector<uint32\_t>\&\ keys)\ \{}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keyword}{auto}\ key\ =\ keys[(4\ *\ round)\ +\ col];}
+\DoxyCodeLine{00399\ }
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ We\ can\ just\ cast\ the\ number\ into\ a\ byte\ array.}}
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ \textcolor{keyword}{auto}*\ bytes\ =\ \textcolor{keyword}{reinterpret\_cast<}\textcolor{keyword}{const\ }uint8\_t*\textcolor{keyword}{>}(\&key);}
+\DoxyCodeLine{00402\ }
+\DoxyCodeLine{00403\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ \{}
+\DoxyCodeLine{00404\ \ \ \ \ \ \ \ \ \ \ array[row][col]\ \string^=\ bytes[row];}
+\DoxyCodeLine{00405\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00406\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00407\ \ \ \ \ \}}
+\DoxyCodeLine{00408\ }
+\DoxyCodeLine{00409\ }
+\DoxyCodeLine{00419\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classaes_1_1state__array_abfc3fa037c3ee4e569c5d854e98ee9ac}{SubBytes}}()\ \{}
+\DoxyCodeLine{00420\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ \{}
+\DoxyCodeLine{00421\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00422\ }
+\DoxyCodeLine{00423\ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ uint8\_t\ \textcolor{keywordtype}{byte}\ =\ array[col][row];}
+\DoxyCodeLine{00424\ }
+\DoxyCodeLine{00425\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Here,\ we\ find\ the\ multiplicative\ inverse\ of\ the\ byte\ in}}
+\DoxyCodeLine{00426\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ In\ a\ Galois\ Field\ of\ GF(2**8).\ We\ can\ use\ the\ extended\ Euclidean}}
+\DoxyCodeLine{00427\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Algorithm:\ b(x)a(x)\ +\ m(x)c(x)\ =\ 1.}}
+\DoxyCodeLine{00428\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ See\ Section\ 4.4\ of\ the\ Reference\ for\ details.}}
+\DoxyCodeLine{00429\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ The\ multiplicative\ inverse\ over\ this\ field\ has\ good\ non-\/linearity\ properties.}}
+\DoxyCodeLine{00430\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ The\ constant\ value\ is\ chosen\ in\ a\ similar\ fashion\ to\ the\ Round\ Constants\ in}}
+\DoxyCodeLine{00431\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Expansion:\ It\ eliminates\ symmetries.}}
+\DoxyCodeLine{00432\ \ \ \ \ \ \ \ \ \ \ std::bitset<8>\ i\ =\ \mbox{\hyperlink{namespaceaes_1_1gf_af5bc7611193690b722aa944f6caaf890}{gf::inverse}}(\textcolor{keywordtype}{byte}),\ c\ =\ 0b01100011,\ result\ =\ 0;}
+\DoxyCodeLine{00433\ }
+\DoxyCodeLine{00434\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Now,\ we\ perform\ the\ affine\ transformation.\ This}}
+\DoxyCodeLine{00435\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ is\ done\ on\ a\ bit-\/by-\/bit\ level,\ performing\ 5\ XOR}}
+\DoxyCodeLine{00436\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ operations\ per\ bit,\ or\ 40\ XOR\ operations\ per\ byte.}}
+\DoxyCodeLine{00437\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Again,\ this\ shows\ the\ value\ of\ the\ lookup\ table.}}
+\DoxyCodeLine{00438\ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ x\ =\ 0;\ x\ <\ 8;\ ++x)\ \{}
+\DoxyCodeLine{00439\ }
+\DoxyCodeLine{00440\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ The\ entire\ expression\ is:}}
+\DoxyCodeLine{00441\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ b\_i\ =\ b\_i\ \string^\ b\_i+4\%8\ \string^\ b\_i+5\%8\ \string^\ b\_i+6\%8\ \string^\ b\_i+7\%8\ \string^\ c\_i}}
+\DoxyCodeLine{00442\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ This\ gets\ applied\ for\ each\ bit,\ so\ eight\ times\ for\ a\ single\ value.}}
+\DoxyCodeLine{00443\ \ \ \ \ \ \ \ \ \ \ \ \ result[x]\ =\ i[x]\ \string^\ i[(x\ +\ 4)\ \%\ 8]\ \string^\ i[(x\ +\ 5)\ \%\ 8]\ \string^\ i[(x\ +\ 6)\ \%\ 8]\ \string^\ i[(x\ +\ 7)\ \%\ 8]\ \string^\ c[x];}
+\DoxyCodeLine{00444\ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00445\ }
+\DoxyCodeLine{00446\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Finally,\ collapse\ the\ bitset\ back\ into\ an\ actual\ number\ we\ can\ store.}}
+\DoxyCodeLine{00447\ \ \ \ \ \ \ \ \ \ \ array[col][row]\ =\ result.to\_ulong();}
+\DoxyCodeLine{00448\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00449\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00450\ \ \ \ \ \}}
+\DoxyCodeLine{00451\ }
+\DoxyCodeLine{00452\ }
+\DoxyCodeLine{00459\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classaes_1_1state__array_a9dce6a9071b95fdaeebcf70cc83bbea7}{InvSubBytes}}()\ \{}
+\DoxyCodeLine{00460\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ \{}
+\DoxyCodeLine{00461\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (uint8\_t\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00462\ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ uint8\_t\ \textcolor{keywordtype}{byte}\ =\ array[col][row];}
+\DoxyCodeLine{00463\ }
+\DoxyCodeLine{00464\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ This\ may\ be\ confusing,\ but\ this\ is\ the\ inverse\ of\ the\ affine\ transformation\ we\ did\ in\ SubBytes.}}
+\DoxyCodeLine{00465\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ https://en.wikipedia.org/wiki/Rijndael\_S-\/box\#Inverse\_S-\/box}}
+\DoxyCodeLine{00466\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ The\ math\ isn't\ particularly\ important,\ all\ that\ you\ need\ to\ understand\ is\ this\ reverses\ what\ we}}
+\DoxyCodeLine{00467\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ did\ prior.}}
+\DoxyCodeLine{00468\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ std::rotl\ is\ a\ rotate\ shift\ (IE\ bits\ shifted\ out\ are\ added\ to\ the\ front)}}
+\DoxyCodeLine{00469\ \ \ \ \ \ \ \ \ \ \ uint8\_t\ i\ =\ byte,\ c\ =\ 0b00000101,\ result\ =\ 0;}
+\DoxyCodeLine{00470\ \ \ \ \ \ \ \ \ \ \ result\ =\ std::rotl(i,\ 1)\ \string^\ std::rotl(i,\ 3)\ \string^\ std::rotl(i,\ 6)\ \ \string^\ c;}
+\DoxyCodeLine{00471\ }
+\DoxyCodeLine{00472\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Once\ we've\ undone\ the\ transformation,\ get\ the\ multiplicative\ inverse,\ which\ is\ our\ original.}}
+\DoxyCodeLine{00473\ \ \ \ \ \ \ \ \ \ \ array[col][row]\ =\ \mbox{\hyperlink{namespaceaes_1_1gf_af5bc7611193690b722aa944f6caaf890}{gf::inverse}}(result);}
+\DoxyCodeLine{00474\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00475\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00476\ \ \ \ \ \}}
+\DoxyCodeLine{00477\ }
+\DoxyCodeLine{00478\ }
+\DoxyCodeLine{00488\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classaes_1_1state__array_a39211c4d666322d295f8bd6209bd6009}{ShiftRows}}()\ \{}
+\DoxyCodeLine{00489\ }
+\DoxyCodeLine{00490\ \ \ \ \ \ \ \textcolor{comment}{//\ Create\ a\ buffer\ to\ place\ the\ values\ at\ new\ positions.}}
+\DoxyCodeLine{00491\ \ \ \ \ \ \ std::array<std::array<uint8\_t,\ 4>,\ 4>\ buffer;}
+\DoxyCodeLine{00492\ }
+\DoxyCodeLine{00493\ \ \ \ \ \ \ \textcolor{comment}{//\ Shift\ each\ of\ the\ based\ on\ the\ scheme\ described}}
+\DoxyCodeLine{00494\ \ \ \ \ \ \ \textcolor{comment}{//\ in\ 5.5\ of\ the\ Reference.}}
+\DoxyCodeLine{00495\ \ \ \ \ \ \ \textcolor{comment}{//\ Note\ that\ while\ there\ is\ no\ explicit\ statement}}
+\DoxyCodeLine{00496\ \ \ \ \ \ \ \textcolor{comment}{//\ Excluding\ the\ first\ row\ as\ mentioned\ in\ the\ Reference.}}
+\DoxyCodeLine{00497\ \ \ \ \ \ \ \textcolor{comment}{//\ The\ math\ here\ works\ out\ such\ that\ the\ first\ row}}
+\DoxyCodeLine{00498\ \ \ \ \ \ \ \textcolor{comment}{//\ Is\ copied\ in\ place:}}
+\DoxyCodeLine{00499\ \ \ \ \ \ \ \textcolor{comment}{//\ 0,0\ =\ 0+0\ \%\ 4\ =\ 0}}
+\DoxyCodeLine{00500\ \ \ \ \ \ \ \textcolor{comment}{//\ 0,1\ =\ 0+1\ \%\ 4\ =\ 1\ ...}}
+\DoxyCodeLine{00501\ \ \ \ \ \ \ \textcolor{comment}{//\ And\ since\ the\ row\ itself\ remains\ constant,}}
+\DoxyCodeLine{00502\ \ \ \ \ \ \ \textcolor{comment}{//\ The\ top\ row\ remains\ unchanged.}}
+\DoxyCodeLine{00503\ \ \ \ \ \ \ \textcolor{comment}{//\ I\ could\ not\ find\ a\ reason\ for\ WHY\ the\ first\ row\ is\ excluded,}}
+\DoxyCodeLine{00504\ \ \ \ \ \ \ \textcolor{comment}{//\ Which\ makes\ me\ think\ it\ was\ just\ a\ quirk\ of\ how\ this\ algorithm}}
+\DoxyCodeLine{00505\ \ \ \ \ \ \ \textcolor{comment}{//\ Works.\ Because\ this\ step\ is\ to\ prevent\ each\ COLUMN\ from\ being}}
+\DoxyCodeLine{00506\ \ \ \ \ \ \ \textcolor{comment}{//\ Independent,\ the\ top\ row\ being\ unchanged\ doesn't\ actually}}
+\DoxyCodeLine{00507\ \ \ \ \ \ \ \textcolor{comment}{//\ present\ any\ weakness,\ since\ the\ columns\ are\ still\ being\ shuffled}}
+\DoxyCodeLine{00508\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ \{}
+\DoxyCodeLine{00509\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00510\ \ \ \ \ \ \ \ \ \ \ buffer[col][row]\ =\ array[(col\ +\ row)\ \%\ 4][row];}
+\DoxyCodeLine{00511\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00512\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00513\ }
+\DoxyCodeLine{00514\ \ \ \ \ \ \ \textcolor{comment}{//\ Replace\ with\ the\ new\ values.\ There\ is\ probably\ a\ more\ efficient}}
+\DoxyCodeLine{00515\ \ \ \ \ \ \ \textcolor{comment}{//\ Way\ of\ doing\ this,\ perhaps\ mutating\ the\ array\ in\ place,\ rather}}
+\DoxyCodeLine{00516\ \ \ \ \ \ \ \textcolor{comment}{//\ Than\ creating\ a\ copy,\ but\ this\ allows\ us\ to\ better\ shows\ what}}
+\DoxyCodeLine{00517\ \ \ \ \ \ \ \textcolor{comment}{//\ shift\ is\ being\ performed.}}
+\DoxyCodeLine{00518\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ \{}
+\DoxyCodeLine{00519\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00520\ \ \ \ \ \ \ \ \ \ \ array[col][row]\ =\ buffer[col][row];}
+\DoxyCodeLine{00521\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00522\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00523\ \ \ \ \ \}}
+\DoxyCodeLine{00524\ }
+\DoxyCodeLine{00525\ }
+\DoxyCodeLine{00533\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classaes_1_1state__array_a4bf6ccb13e56b4c0e9f8a2016b20291a}{InvShiftRows}}()\ \{}
+\DoxyCodeLine{00534\ }
+\DoxyCodeLine{00535\ \ \ \ \ \ \ \textcolor{comment}{//\ Create\ a\ buffer\ to\ place\ the\ values\ at\ new\ positions.}}
+\DoxyCodeLine{00536\ \ \ \ \ \ \ std::array<std::array<uint8\_t,\ 4>,\ 4>\ buffer;}
+\DoxyCodeLine{00537\ }
+\DoxyCodeLine{00538\ \ \ \ \ \ \ \textcolor{comment}{//\ Exact\ same\ loop\ as\ ShiftRows,\ but\ invert\ the\ index.}}
+\DoxyCodeLine{00539\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ \{}
+\DoxyCodeLine{00540\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00541\ \ \ \ \ \ \ \ \ \ \ buffer[col][row]\ =\ array[(col\ -\/\ row)\ \%\ 4][row];}
+\DoxyCodeLine{00542\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00543\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00544\ }
+\DoxyCodeLine{00545\ \ \ \ \ \ \ \textcolor{comment}{//\ Update\ the\ state.}}
+\DoxyCodeLine{00546\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ \{}
+\DoxyCodeLine{00547\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00548\ \ \ \ \ \ \ \ \ \ \ array[col][row]\ =\ buffer[col][row];}
+\DoxyCodeLine{00549\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00550\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00551\ \ \ \ \ \}}
+\DoxyCodeLine{00552\ }
+\DoxyCodeLine{00553\ }
+\DoxyCodeLine{00560\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classaes_1_1state__array_a783fd3589d4f0bb1cb0b17c0bef9d8e0}{MixColumns}}()\ \{}
+\DoxyCodeLine{00561\ \ \ \ \ \ \ \textcolor{comment}{//\ These\ operations\ are\ equivalent\ to\ multiplying\ the\ columns}}
+\DoxyCodeLine{00562\ \ \ \ \ \ \ \textcolor{comment}{//\ Against\ a\ matrix,\ specifically:}}
+\DoxyCodeLine{00563\ \ \ \ \ \ \ \textcolor{comment}{//\ [\ 02\ 03\ 01\ 01\ ][s0c]}}
+\DoxyCodeLine{00564\ \ \ \ \ \ \ \textcolor{comment}{//\ [\ 01\ 02\ 03\ 01\ ][s1c]}}
+\DoxyCodeLine{00565\ \ \ \ \ \ \ \textcolor{comment}{//\ [\ 01\ 01\ 02\ 03\ ][s2c]}}
+\DoxyCodeLine{00566\ \ \ \ \ \ \ \textcolor{comment}{//\ [\ 03\ 01\ 01\ 02\ ][s3c]}}
+\DoxyCodeLine{00567\ \ \ \ \ \ \ \textcolor{comment}{//\ For\ each\ column\ c.}}
+\DoxyCodeLine{00568\ \ \ \ \ \ \ \textcolor{comment}{//\ Our\ multiplications\ are\ done\ in\ GF(256)}}
+\DoxyCodeLine{00569\ }
+\DoxyCodeLine{00570\ \ \ \ \ \ \ uint8\_t\ buffer[4];}
+\DoxyCodeLine{00571\ \ \ \ \ \ \ \textcolor{keyword}{const}\ uint8\_t\ set[4]\ =\ \{0x02,\ 0x01,\ 0x01,\ 0x03\};}
+\DoxyCodeLine{00572\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00573\ \ \ \ \ \ \ \ \ buffer[0]\ =\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0x2,\ array[col][0])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0x3,\ array[col][1])\ \string^\ array[col][2]\ \string^\ array[col][3];}
+\DoxyCodeLine{00574\ \ \ \ \ \ \ \ \ buffer[1]\ =\ array[col][0]\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0x2,\ array[col][1])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0x3,\ array[col][2])\ \string^\ array[col][3];}
+\DoxyCodeLine{00575\ \ \ \ \ \ \ \ \ buffer[2]\ =\ array[col][0]\ \string^\ array[col][1]\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0x2,\ array[col][2])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0x3,\ array[col][3]);}
+\DoxyCodeLine{00576\ \ \ \ \ \ \ \ \ buffer[3]\ =\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0x3,\ array[col][0])\ \string^\ array[col][1]\ \string^\ array[col][2]\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0x2,\ array[col][3]);}
+\DoxyCodeLine{00577\ }
+\DoxyCodeLine{00578\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ array[col][row]\ =\ buffer[row];}
+\DoxyCodeLine{00579\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00580\ \ \ \ \ \}}
+\DoxyCodeLine{00581\ }
+\DoxyCodeLine{00582\ }
+\DoxyCodeLine{00587\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classaes_1_1state__array_a8636f62214b4c51d33311980022a95be}{InvMixColumns}}()\ \{}
+\DoxyCodeLine{00588\ \ \ \ \ \ \ \textcolor{comment}{//\ These\ operations\ are\ equivalent\ to\ multiplying\ the\ columns}}
+\DoxyCodeLine{00589\ \ \ \ \ \ \ \textcolor{comment}{//\ Against\ a\ matrix,\ specifically:}}
+\DoxyCodeLine{00590\ \ \ \ \ \ \ \textcolor{comment}{//\ [\ 0e\ 0b\ 0d\ 09\ ][s0c]}}
+\DoxyCodeLine{00591\ \ \ \ \ \ \ \textcolor{comment}{//\ [\ 09\ 0e\ 0b\ 0d\ ][s1c]}}
+\DoxyCodeLine{00592\ \ \ \ \ \ \ \textcolor{comment}{//\ [\ 0d\ 09\ 0e\ 0b\ ][s2c]}}
+\DoxyCodeLine{00593\ \ \ \ \ \ \ \textcolor{comment}{//\ [\ 0b\ 0d\ 09\ 0e\ ][s3c]}}
+\DoxyCodeLine{00594\ \ \ \ \ \ \ \textcolor{comment}{//\ For\ each\ column\ c.}}
+\DoxyCodeLine{00595\ \ \ \ \ \ \ \textcolor{comment}{//\ Our\ multiplications\ are\ done\ in\ GF(256)}}
+\DoxyCodeLine{00596\ \ \ \ \ \ \ \textcolor{comment}{//\ This\ matrix\ reverses\ the\ matrix\ we\ multiplied\ with\ in\ MixColumns()}}
+\DoxyCodeLine{00597\ }
+\DoxyCodeLine{00598\ \ \ \ \ \ \ uint8\_t\ buffer[4];}
+\DoxyCodeLine{00599\ \ \ \ \ \ \ \textcolor{keyword}{const}\ uint8\_t\ set[4]\ =\ \{0x0e,\ 0x09,\ 0x0d,\ 0x0b\};}
+\DoxyCodeLine{00600\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00601\ \ \ \ \ \ \ \ \ buffer[0]\ =\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0xe,\ array[col][0])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0xb,\ array[col][1])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0xd,\ array[col][2])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0x9,\ array[col][3]);}
+\DoxyCodeLine{00602\ \ \ \ \ \ \ \ \ buffer[1]\ =\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0x9,\ array[col][0])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0xe,\ array[col][1])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0xb,\ array[col][2])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0xd,\ array[col][3]);}
+\DoxyCodeLine{00603\ \ \ \ \ \ \ \ \ buffer[2]\ =\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0xd,\ array[col][0])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0x9,\ array[col][1])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0xe,\ array[col][2])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0xb,\ array[col][3]);}
+\DoxyCodeLine{00604\ \ \ \ \ \ \ \ \ buffer[3]\ =\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0xb,\ array[col][0])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0xd,\ array[col][1])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0x9,\ array[col][2])\ \string^\ \mbox{\hyperlink{namespaceaes_1_1gf_a9d72c2f0ba801e9e8d6ce9829334833e}{gf::mult}}(0xe,\ array[col][3]);}
+\DoxyCodeLine{00605\ }
+\DoxyCodeLine{00606\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ array[col][row]\ =\ buffer[row];}
+\DoxyCodeLine{00607\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00608\ \ \ \ \ \}}
+\DoxyCodeLine{00609\ \ \ \};}
+\DoxyCodeLine{00610\ }
+\DoxyCodeLine{00611\ }
+\DoxyCodeLine{00615\ \ \ \textcolor{keyword}{class\ }\mbox{\hyperlink{classaes_1_1state}{state}}\ \{}
+\DoxyCodeLine{00616\ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00617\ \ \ \ \ std::vector<state\_array>\ arrays;}
+\DoxyCodeLine{00618\ \ \ \ \ std::vector<uint32\_t>\ expanded;}
+\DoxyCodeLine{00619\ \ \ \ \ std::array<uint64\_t,\ 4>\ key\ =\ \{0\};}
+\DoxyCodeLine{00620\ \ \ \ \ uint64\_t\ rounds\ =\ 0;}
+\DoxyCodeLine{00621\ }
+\DoxyCodeLine{00622\ }
+\DoxyCodeLine{00629\ \ \ \ \ \textcolor{keywordtype}{void}\ Schedule(\textcolor{keyword}{const}\ std::array<uint64\_t,\ 4>\&\ k,\ \textcolor{keyword}{const}\ uint64\_t\&\ Nr)\ \{}
+\DoxyCodeLine{00630\ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (Nr)\ \{}
+\DoxyCodeLine{00631\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 10:\ expanded\ =\ \mbox{\hyperlink{namespaceaes_1_1key_ad91c7cb9402fbe2fa12cb7ca048dd58a}{key::Expansion}}(k,\ 4);\ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00632\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 12:\ expanded\ =\ \mbox{\hyperlink{namespaceaes_1_1key_ad91c7cb9402fbe2fa12cb7ca048dd58a}{key::Expansion}}(k,\ 6);\ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00633\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 14:\ expanded\ =\ \mbox{\hyperlink{namespaceaes_1_1key_ad91c7cb9402fbe2fa12cb7ca048dd58a}{key::Expansion}}(k,\ 8);\ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00634\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:\ \textcolor{keywordflow}{throw}\ std::runtime\_error(\textcolor{stringliteral}{"{}Invalid\ key\ size:"{}}\ +\ std::to\_string(Nr));}
+\DoxyCodeLine{00635\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00636\ \ \ \ \ \}}
+\DoxyCodeLine{00637\ }
+\DoxyCodeLine{00638\ }
+\DoxyCodeLine{00639\ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00640\ }
+\DoxyCodeLine{00641\ \ \ \ \ \textcolor{comment}{//\ Construct\ a\ state\ from\ a\ input\ string.}}
+\DoxyCodeLine{00642\ \ \ \ \ \mbox{\hyperlink{classaes_1_1state}{state}}(\textcolor{keyword}{const}\ std::string\&\ in,\ \textcolor{keyword}{const}\ std::array<uint64\_t,\ 4>\&\ k,\ \textcolor{keyword}{const}\ uint64\_t\&\ Nr)\ \{}
+\DoxyCodeLine{00643\ }
+\DoxyCodeLine{00644\ \ \ \ \ \ \ \textcolor{comment}{//\ Get\ our\ key\ schedule.}}
+\DoxyCodeLine{00645\ \ \ \ \ \ \ Schedule(k,\ Nr);}
+\DoxyCodeLine{00646\ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ x\ =\ 0;}
+\DoxyCodeLine{00647\ }
+\DoxyCodeLine{00648\ \ \ \ \ \ \ \textcolor{comment}{//\ The\ state\_array\ constructor\ takes\ a\ mutable\ reference\ to\ x,}}
+\DoxyCodeLine{00649\ \ \ \ \ \ \ \textcolor{comment}{//\ and\ will\ increment\ it\ automatically.\ Therefore,\ we\ just\ need}}
+\DoxyCodeLine{00650\ \ \ \ \ \ \ \textcolor{comment}{//\ to\ repeatedly\ construct\ state\_arrays\ until\ the\ string\ has\ been\ exhausted.}}
+\DoxyCodeLine{00651\ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (x\ <\ in.length())\ \{arrays.emplace\_back(\mbox{\hyperlink{classaes_1_1state__array}{state\_array}}(in,\ x));\}}
+\DoxyCodeLine{00652\ }
+\DoxyCodeLine{00653\ \ \ \ \ \ \ key\ =\ k;}
+\DoxyCodeLine{00654\ \ \ \ \ \ \ rounds\ =\ Nr;}
+\DoxyCodeLine{00655\ \ \ \ \ \}}
+\DoxyCodeLine{00656\ }
+\DoxyCodeLine{00657\ }
+\DoxyCodeLine{00658\ \ \ \ \ \textcolor{comment}{//\ Construct\ a\ state\ from\ a\ collection\ of\ state\_arrays.}}
+\DoxyCodeLine{00659\ \ \ \ \ \mbox{\hyperlink{classaes_1_1state}{state}}(\textcolor{keyword}{const}\ std::vector<state\_array>\&\ arrs,\ \textcolor{keyword}{const}\ std::array<uint64\_t,\ 4>\&\ k,\ \textcolor{keyword}{const}\ uint64\_t\&\ Nr)\ \{}
+\DoxyCodeLine{00660\ \ \ \ \ \ \ Schedule(k,\ Nr);}
+\DoxyCodeLine{00661\ \ \ \ \ \ \ arrays\ =\ arrs;}
+\DoxyCodeLine{00662\ \ \ \ \ \ \ key\ =\ k;}
+\DoxyCodeLine{00663\ \ \ \ \ \ \ rounds\ =\ Nr;}
+\DoxyCodeLine{00664\ \ \ \ \ \}}
+\DoxyCodeLine{00665\ }
+\DoxyCodeLine{00666\ }
+\DoxyCodeLine{00667\ \ \ \ \ \textcolor{comment}{//\ Getters}}
+\DoxyCodeLine{00668\ \ \ \ \ \textcolor{keyword}{auto}\&\ get\_arrays()\ \{\textcolor{keywordflow}{return}\ arrays;\}}
+\DoxyCodeLine{00669\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keyword}{auto}\&\ get\_arrays()\textcolor{keyword}{\ const\ }\{\textcolor{keywordflow}{return}\ arrays;\}}
+\DoxyCodeLine{00670\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keyword}{auto}\&\ get\_key()\ \{\textcolor{keywordflow}{return}\ key;\}}
+\DoxyCodeLine{00671\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keyword}{auto}\&\ get\_rounds()\ \{\textcolor{keywordflow}{return}\ rounds;\}}
+\DoxyCodeLine{00672\ }
+\DoxyCodeLine{00673\ }
+\DoxyCodeLine{00678\ \ \ \ \ std::string\ \mbox{\hyperlink{classaes_1_1state_a023b3f80fec69116ee6694a06b57bf83}{unravel}}()\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00679\ \ \ \ \ \ \ std::stringstream\ out;}
+\DoxyCodeLine{00680\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keyword}{const}\ \textcolor{keyword}{auto}\&\ array\ :\ arrays)}
+\DoxyCodeLine{00681\ \ \ \ \ \ \ \ \ out\ <<\ array.unravel();}
+\DoxyCodeLine{00682\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ out.str();}
+\DoxyCodeLine{00683\ \ \ \ \ \}}
+\DoxyCodeLine{00684\ }
+\DoxyCodeLine{00685\ }
+\DoxyCodeLine{00690\ \ \ \ \ \textcolor{comment}{//\ AddRoundKey}}
+\DoxyCodeLine{00691\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classaes_1_1state_a8972c8b734ecb1f1b7eac6f46068f4f6}{AddRoundKey}}(\textcolor{keyword}{const}\ uint64\_t\&\ round)\ \{\textcolor{keywordflow}{for}\ (\textcolor{keyword}{auto}\&\ array:\ arrays)\ array.AddRoundKey(round,\ expanded);\}}
+\DoxyCodeLine{00692\ }
+\DoxyCodeLine{00693\ \ \ \ \ \textcolor{comment}{//\ SubBytes.}}
+\DoxyCodeLine{00694\ \ \ \ \ \textcolor{keywordtype}{void}\ SubBytes()\ \{\textcolor{keywordflow}{for}\ (\textcolor{keyword}{auto}\&\ array:\ arrays)\ array.SubBytes();\}}
+\DoxyCodeLine{00695\ \ \ \ \ \textcolor{keywordtype}{void}\ InvSubBytes()\ \{\textcolor{keywordflow}{for}\ (\textcolor{keyword}{auto}\&\ array:\ arrays)\ array.InvSubBytes();\}}
+\DoxyCodeLine{00696\ }
+\DoxyCodeLine{00697\ \ \ \ \ \textcolor{comment}{//\ ShiftRows}}
+\DoxyCodeLine{00698\ \ \ \ \ \textcolor{keywordtype}{void}\ ShiftRows()\ \{\textcolor{keywordflow}{for}\ (\textcolor{keyword}{auto}\&\ array:\ arrays)\ array.ShiftRows();\}}
+\DoxyCodeLine{00699\ \ \ \ \ \textcolor{keywordtype}{void}\ InvShiftRows()\ \{\textcolor{keywordflow}{for}\ (\textcolor{keyword}{auto}\&\ array:\ arrays)\ array.InvShiftRows();\}}
+\DoxyCodeLine{00700\ }
+\DoxyCodeLine{00701\ \ \ \ \ \textcolor{comment}{//\ MixColumns}}
+\DoxyCodeLine{00702\ \ \ \ \ \textcolor{keywordtype}{void}\ MixColumns()\ \{\textcolor{keywordflow}{for}\ (\textcolor{keyword}{auto}\&\ array:\ arrays)\ array.MixColumns();\}}
+\DoxyCodeLine{00703\ \ \ \ \ \textcolor{keywordtype}{void}\ InvMixColumns()\ \{\textcolor{keywordflow}{for}\ (\textcolor{keyword}{auto}\&\ array:\ arrays)\ array.InvMixColumns();\}}
+\DoxyCodeLine{00704\ \ \ \};}
+\DoxyCodeLine{00705\ }
+\DoxyCodeLine{00706\ }
+\DoxyCodeLine{00716\ \ \ std::string\ \mbox{\hyperlink{namespaceaes_ac0a5720b2d03ef9c2967b683bb9883e9}{Cipher}}(\textcolor{keyword}{const}\ std::string\&\ in,\ \textcolor{keyword}{const}\ std::array<uint64\_t,\ 4>\&\ k,\ \textcolor{keyword}{const}\ uint64\_t\&\ Nr)\ \{}
+\DoxyCodeLine{00717\ \ \ \ \ \textcolor{keyword}{auto}\ s\ =\ \mbox{\hyperlink{classaes_1_1state}{state}}(in,\ k,\ Nr);}
+\DoxyCodeLine{00718\ \ \ \ \ s.AddRoundKey(0);}
+\DoxyCodeLine{00719\ }
+\DoxyCodeLine{00720\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ x\ =\ 0;\ x\ <\ Nr\ -\/\ 1;\ ++x)\ \{}
+\DoxyCodeLine{00721\ \ \ \ \ \ \ s.SubBytes();}
+\DoxyCodeLine{00722\ \ \ \ \ \ \ s.ShiftRows();}
+\DoxyCodeLine{00723\ \ \ \ \ \ \ s.MixColumns();}
+\DoxyCodeLine{00724\ \ \ \ \ \ \ s.AddRoundKey(x\ +\ 1);}
+\DoxyCodeLine{00725\ \ \ \ \ \}}
+\DoxyCodeLine{00726\ }
+\DoxyCodeLine{00727\ \ \ \ \ s.SubBytes();}
+\DoxyCodeLine{00728\ \ \ \ \ s.ShiftRows();}
+\DoxyCodeLine{00729\ \ \ \ \ s.AddRoundKey(Nr\ -\/\ 1);}
+\DoxyCodeLine{00730\ }
+\DoxyCodeLine{00731\ \ \ \ \ \textcolor{keywordflow}{return}\ s.unravel();}
+\DoxyCodeLine{00732\ \ \ \}}
+\DoxyCodeLine{00733\ }
+\DoxyCodeLine{00734\ }
+\DoxyCodeLine{00744\ \ \ std::string\ \mbox{\hyperlink{namespaceaes_a31f8f45354772a80f86f298f7a0c5739}{InvCipher}}(\textcolor{keyword}{const}\ std::string\&\ in,\ \textcolor{keyword}{const}\ std::array<uint64\_t,\ 4>\&\ k,\ \textcolor{keyword}{const}\ uint64\_t\&\ Nr)\ \{}
+\DoxyCodeLine{00745\ \ \ \ \ \textcolor{keyword}{auto}\ s\ =\ \mbox{\hyperlink{classaes_1_1state}{state}}(in,\ k,\ Nr);}
+\DoxyCodeLine{00746\ }
+\DoxyCodeLine{00747\ \ \ \ \ \textcolor{comment}{//\ Because\ the\ AddRoundKey\ is\ literally\ just\ XOR,\ running\ it\ again,\ but\ in\ reverse\ (Nr-\/1\ -\/>\ 0),}}
+\DoxyCodeLine{00748\ \ \ \ \ \textcolor{comment}{//\ undoes\ the\ operation,\ so\ we\ don't\ need\ a\ dedicated\ InvAddRoundKey\ like\ the\ other}}
+\DoxyCodeLine{00749\ \ \ \ \ \textcolor{comment}{//\ steps.}}
+\DoxyCodeLine{00750\ \ \ \ \ s.AddRoundKey(Nr\ -\/\ 1);}
+\DoxyCodeLine{00751\ }
+\DoxyCodeLine{00752\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ x\ =\ Nr\ -\/\ 1;\ x\ >=\ 1;\ -\/-\/x)\ \{}
+\DoxyCodeLine{00753\ \ \ \ \ \ \ s.InvShiftRows();}
+\DoxyCodeLine{00754\ \ \ \ \ \ \ s.InvSubBytes();}
+\DoxyCodeLine{00755\ \ \ \ \ \ \ s.AddRoundKey(x);}
+\DoxyCodeLine{00756\ \ \ \ \ \ \ s.InvMixColumns();}
+\DoxyCodeLine{00757\ \ \ \ \ \}}
+\DoxyCodeLine{00758\ }
+\DoxyCodeLine{00759\ \ \ \ \ s.InvShiftRows();}
+\DoxyCodeLine{00760\ \ \ \ \ s.InvSubBytes();}
+\DoxyCodeLine{00761\ \ \ \ \ s.AddRoundKey(0);}
+\DoxyCodeLine{00762\ }
+\DoxyCodeLine{00763\ \ \ \ \ \textcolor{keywordflow}{return}\ s.unravel();}
+\DoxyCodeLine{00764\ \ \ \}}
+\DoxyCodeLine{00765\ }
+\DoxyCodeLine{00766\ }
+\DoxyCodeLine{00776\ \ \ std::string\ \mbox{\hyperlink{namespaceaes_aa0147bc1291533ed0066f04b9ded820d}{Ctr}}(\textcolor{keyword}{const}\ std::string\&\ in,\ \textcolor{keyword}{const}\ std::array<uint64\_t,\ 4>\&\ k,\ \textcolor{keyword}{const}\ uint64\_t\ Nr,\ uint64\_t\ nonce)\ \{}
+\DoxyCodeLine{00777\ \ \ \ \ \textcolor{comment}{//\ We\ just\ use\ this\ to\ partition\ the\ input\ into\ individual\ state\_arrays.}}
+\DoxyCodeLine{00778\ \ \ \ \ \textcolor{keyword}{auto}\ s\ =\ \mbox{\hyperlink{classaes_1_1state}{state}}(in,\ k,\ Nr);}
+\DoxyCodeLine{00779\ }
+\DoxyCodeLine{00780\ \ \ \ \ \textcolor{comment}{//\ Go\ through\ each\ array.}}
+\DoxyCodeLine{00781\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keyword}{auto}\&\ array:\ s.get\_arrays())\ \{}
+\DoxyCodeLine{00782\ }
+\DoxyCodeLine{00783\ \ \ \ \ \ \ \textcolor{comment}{//\ Generate\ a\ Pad\ for\ it.}}
+\DoxyCodeLine{00784\ \ \ \ \ \ \ \textcolor{keyword}{auto}\ pad\ =\ \mbox{\hyperlink{classaes_1_1state__array}{state\_array}}(\mbox{\hyperlink{namespaceaes_ac0a5720b2d03ef9c2967b683bb9883e9}{Cipher}}(std::string(\textcolor{keyword}{reinterpret\_cast<}\textcolor{keywordtype}{char}*\textcolor{keyword}{>}(\&nonce),\ \textcolor{keyword}{sizeof}(uint64\_t)),\ k,\ Nr));}
+\DoxyCodeLine{00785\ }
+\DoxyCodeLine{00786\ \ \ \ \ \ \ \textcolor{comment}{//\ XOR}}
+\DoxyCodeLine{00787\ \ \ \ \ \ \ array.xor\_arr(pad);}
+\DoxyCodeLine{00788\ }
+\DoxyCodeLine{00789\ \ \ \ \ \ \ \textcolor{comment}{//\ Increment\ the\ nonce\ for\ the\ next\ array.}}
+\DoxyCodeLine{00790\ \ \ \ \ \ \ nonce++;}
+\DoxyCodeLine{00791\ \ \ \ \ \}}
+\DoxyCodeLine{00792\ }
+\DoxyCodeLine{00793\ \ \ \ \ \textcolor{comment}{//\ Unravel\ the\ state.}}
+\DoxyCodeLine{00794\ \ \ \ \ \textcolor{keywordflow}{return}\ s.unravel();}
+\DoxyCodeLine{00795\ \ \ \}}
+\DoxyCodeLine{00796\ }
+\DoxyCodeLine{00797\ }
+\DoxyCodeLine{00805\ \ \ \textcolor{keyword}{namespace\ }gcm\ \{}
+\DoxyCodeLine{00806\ }
+\DoxyCodeLine{00828\ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{namespaceaes_1_1gcm_ad32f2adca6691ec845600d8fa98c5bc3}{increment}}(\mbox{\hyperlink{classaes_1_1state__array}{state\_array}}\&\ X)\ \{}
+\DoxyCodeLine{00829\ \ \ \ \ \ \ \ \textcolor{comment}{//\ Get\ the\ underlying\ array.}}
+\DoxyCodeLine{00830\ \ \ \ \ \ \ \ \textcolor{keyword}{auto}\&\ array\ =\ X.get();}
+\DoxyCodeLine{00831\ }
+\DoxyCodeLine{00832\ \ \ \ \ \ \ \ \textcolor{comment}{//\ The\ state\ array\ is\ always\ 128\ bits,\ so\ len(X)\ =\ 128/8\ =\ 16.}}
+\DoxyCodeLine{00833\ \ \ \ \ \ \ \ \textcolor{comment}{//\ While\ the\ Reference\ makes\ the\ increment\ function\ generic\ in}}
+\DoxyCodeLine{00834\ \ \ \ \ \ \ \ \textcolor{comment}{//\ Terms\ of\ the\ s\ value,\ it\ is\ always\ used\ with\ s=32\ within\ GCM,}}
+\DoxyCodeLine{00835\ \ \ \ \ \ \ \ \textcolor{comment}{//\ which\ is\ 4\ bytes.}}
+\DoxyCodeLine{00836\ \ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00837\ \ \ \ \ \ \ \ \textcolor{comment}{//\ The\ incrementing\ function\ takes\ the\ len(X)\ -\/\ s\ Most}}
+\DoxyCodeLine{00838\ \ \ \ \ \ \ \ \textcolor{comment}{//\ Significant\ Bits\ (The\ first\ 12\ bytes),\ and\ does\ nothing.}}
+\DoxyCodeLine{00839\ \ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00840\ \ \ \ \ \ \ \ \textcolor{comment}{//\ Then,\ it\ takes\ the\ s\ least\ significant\ bits\ (the\ last\ 4)}}
+\DoxyCodeLine{00841\ \ \ \ \ \ \ \ \textcolor{comment}{//\ Bytes,\ casts\ it\ into\ a\ integer,\ adds\ one,\ and\ then\ applies}}
+\DoxyCodeLine{00842\ \ \ \ \ \ \ \ \textcolor{comment}{//\ A\ modulus\ 2**s,\ and\ then\ brings\ it\ all\ back\ together.}}
+\DoxyCodeLine{00843\ \ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00844\ \ \ \ \ \ \ \ \textcolor{comment}{//\ So,\ for\ the\ purpose\ of\ implementation,\ we\ just\ need\ to}}
+\DoxyCodeLine{00845\ \ \ \ \ \ \ \ \textcolor{comment}{//\ extract\ the\ last\ four\ bytes\ of\ the\ state\_array\ used\ for}}
+\DoxyCodeLine{00846\ \ \ \ \ \ \ \ \textcolor{comment}{//\ the\ counter\ (Which\ just\ means\ the\ last\ column\ for\ our}}
+\DoxyCodeLine{00847\ \ \ \ \ \ \ \ \textcolor{comment}{//\ implementation,\ treat\ the\ entire\ thing\ as\ a\ single\ value,}}
+\DoxyCodeLine{00848\ \ \ \ \ \ \ \ \textcolor{comment}{//\ increment\ it,\ mod\ it,\ and\ then\ replace\ the\ existing\ values}}
+\DoxyCodeLine{00849\ \ \ \ \ \ \ \ \textcolor{comment}{//\ with\ these\ new\ values.}}
+\DoxyCodeLine{00850\ \ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00851\ }
+\DoxyCodeLine{00852\ \ \ \ \ \ \ \ \textcolor{comment}{//\ Basically\ we\ just\ take\ each\ 8bit\ value,\ and\ shift\ it:}}
+\DoxyCodeLine{00853\ \ \ \ \ \ \ \ \textcolor{comment}{//\ uint32\_t\ =\ 00000000\ 00000000\ 00000000\ 00000000\ |}}
+\DoxyCodeLine{00854\ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ 11111111\ 00000000\ 00000000\ 00000000\ |\ (array[3][0])}}
+\DoxyCodeLine{00855\ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ 00000000\ 11111111\ 00000000\ 00000000\ |\ (array[3][1])}}
+\DoxyCodeLine{00856\ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ 00000000\ 00000000\ 11111111\ 00000000\ |\ (array[3][2])}}
+\DoxyCodeLine{00857\ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ 00000000\ 00000000\ 00000000\ 11111111\ |\ (array[3][3])}}
+\DoxyCodeLine{00858\ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ -\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/}}
+\DoxyCodeLine{00859\ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ 11111111\ 11111111\ 11111111\ 11111111}}
+\DoxyCodeLine{00860\ \ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00861\ \ \ \ \ \ \ \ \textcolor{comment}{//\ Don't\ think\ about\ this\ too\ hard,\ it\ just\ takes\ our\ bytes\ in\ the\ state\_array}}
+\DoxyCodeLine{00862\ \ \ \ \ \ \ \ \textcolor{comment}{//\ and\ puts\ them\ into\ a\ form\ so\ that\ we\ can\ increment\ the\ entire\ thing.}}
+\DoxyCodeLine{00863\ \ \ \ \ \ \ \ uint32\_t\ lsb\ =\ (array[3][0]\ <<\ 24)\ |\ (array[3][1]\ <<\ 16)\ |\ (array[3][2]\ <<\ 8)\ |\ array[3][3];}
+\DoxyCodeLine{00864\ }
+\DoxyCodeLine{00865\ \ \ \ \ \ \ \ \textcolor{comment}{//\ Fun\ fact,\ since\ we're\ working\ with\ uint32\_t,\ modding\ by\ 2**32\ is\ not\ required,\ since\ if\ the}}
+\DoxyCodeLine{00866\ \ \ \ \ \ \ \ \textcolor{comment}{//\ value\ is\ exceeded,\ it\ will\ automatically\ overflow\ for\ us.\ Therefore,\ we\ can\ just\ increment\ it}}
+\DoxyCodeLine{00867\ \ \ \ \ \ \ \ \textcolor{comment}{//\ And\ let\ C++\ handle\ the\ "{}mod"{}.}}
+\DoxyCodeLine{00868\ \ \ \ \ \ \ \ lsb\ +=\ 1;}
+\DoxyCodeLine{00869\ }
+\DoxyCodeLine{00870\ \ \ \ \ \ \ \ \textcolor{comment}{//\ This\ just\ returns\ the\ value\ into\ individual\ 8\ bit\ values\ in\ the\ array.}}
+\DoxyCodeLine{00871\ \ \ \ \ \ \ \ \textcolor{comment}{//\ We\ go\ in\ reverse\ because\ the\ first\ 8\ bits\ are\ array[3][3].}}
+\DoxyCodeLine{00872\ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ x\ =\ 3;\ x\ >=\ 0;\ -\/-\/x)\ \{}
+\DoxyCodeLine{00873\ }
+\DoxyCodeLine{00874\ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Mask\ to\ get\ the\ first\ 8\ bits.\ Then\ shift\ those\ values\ out\ to\ get\ the\ next\ eight.}}
+\DoxyCodeLine{00875\ \ \ \ \ \ \ \ \ \ array[3][x]\ =\ lsb\ \&\ 0xFF;}
+\DoxyCodeLine{00876\ \ \ \ \ \ \ \ \ \ lsb\ >>=\ 8;}
+\DoxyCodeLine{00877\ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00878\ \ \ \ \ \ \}}
+\DoxyCodeLine{00879\ }
+\DoxyCodeLine{00880\ }
+\DoxyCodeLine{00888\ \ \ \ \ \ \mbox{\hyperlink{classaes_1_1state__array}{state\_array}}\ \mbox{\hyperlink{namespaceaes_1_1gcm_ab95f2c83cf8f0c6a3a9bb4565d561a30}{mult}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classaes_1_1state__array}{state\_array}}\&\ X,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classaes_1_1state__array}{state\_array}}\&\ Y)\ \{}
+\DoxyCodeLine{00889\ \ \ \ \ \ \ \textcolor{comment}{//\ This\ is\ just\ a\ constant.\ Which\ is\ just\ a\ state\ version}}
+\DoxyCodeLine{00890\ \ \ \ \ \ \ \textcolor{comment}{//\ of\ the\ reducing\ polynomial.}}
+\DoxyCodeLine{00891\ \ \ \ \ \ \ \mbox{\hyperlink{classaes_1_1state__array}{state\_array}}\ R;}
+\DoxyCodeLine{00892\ \ \ \ \ \ \ R.get()[0][0]\ =\ 0b11100001;}
+\DoxyCodeLine{00893\ }
+\DoxyCodeLine{00894\ \ \ \ \ \ \ \textcolor{comment}{//\ Basically\ to\ multiply\ we\ start\ with\ generation\ 0}}
+\DoxyCodeLine{00895\ \ \ \ \ \ \ \textcolor{comment}{//\ Of\ Z,\ V,\ and\ then\ iterating\ through\ each\ BIT\ of}}
+\DoxyCodeLine{00896\ \ \ \ \ \ \ \textcolor{comment}{//\ X,\ we\ mutate\ Z\ and\ V.\ Once\ we've\ gone\ through}}
+\DoxyCodeLine{00897\ \ \ \ \ \ \ \textcolor{comment}{//\ All\ the\ bits,\ we'll\ have\ 128\ generations,\ and}}
+\DoxyCodeLine{00898\ \ \ \ \ \ \ \textcolor{comment}{//\ we\ return\ the\ last\ Z.}}
+\DoxyCodeLine{00899\ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00900\ \ \ \ \ \ \ \textcolor{comment}{//\ You\ may\ notice\ this\ scheme\ is\ very\ similar\ to\ our\ Galois}}
+\DoxyCodeLine{00901\ \ \ \ \ \ \ \textcolor{comment}{//\ Field\ 128\ mult,\ which\ takes\ one\ of\ the\ numbers,\ continually}}
+\DoxyCodeLine{00902\ \ \ \ \ \ \ \textcolor{comment}{//\ bit\ shifts\ it\ down\ to\ zero,\ and\ then\ performs\ XOR\ depending}}
+\DoxyCodeLine{00903\ \ \ \ \ \ \ \textcolor{comment}{//\ on\ that\ bit.\ This\ is\ little\ more\ than\ a\ state\_array\ version}}
+\DoxyCodeLine{00904\ \ \ \ \ \ \ \textcolor{comment}{//\ of\ that\ function!\ Go\ back\ up\ to\ gf::mult\ and\ compare!}}
+\DoxyCodeLine{00905\ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00906\ \ \ \ \ \ \ \mbox{\hyperlink{classaes_1_1state__array}{state\_array}}\ Z,\ V\ =\ Y;}
+\DoxyCodeLine{00907\ }
+\DoxyCodeLine{00908\ \ \ \ \ \ \ \textcolor{comment}{//\ To\ iterate\ through\ X,\ we\ just\ do\ our\ normal\ row,\ col}}
+\DoxyCodeLine{00909\ \ \ \ \ \ \ \textcolor{comment}{//\ Iteration,\ and\ then\ for\ each\ value,\ we\ iterate\ 8\ times}}
+\DoxyCodeLine{00910\ \ \ \ \ \ \ \textcolor{comment}{//\ For\ each\ bit.}}
+\DoxyCodeLine{00911\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ \{}
+\DoxyCodeLine{00912\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{00913\ \ \ \ \ \ \ \ \ \ \ uint8\_t\ \textcolor{keywordtype}{byte}\ =\ X.get()[col][row];}
+\DoxyCodeLine{00914\ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ bit\ =\ 0;\ bit\ <\ 8;\ ++bit)\ \{}
+\DoxyCodeLine{00915\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ We\ can\ treat\ this\ as\ a\ boolean,\ as\ every\ non-\/zero}}
+\DoxyCodeLine{00916\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ value\ is\ "{}true"{}.}}
+\DoxyCodeLine{00917\ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ x\ =\ \textcolor{keywordtype}{byte}\ \&\ 0b10000000;}
+\DoxyCodeLine{00918\ }
+\DoxyCodeLine{00919\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ If\ x\_i\ =\ 1,\ Z+1\ =\ Z\ \string^\ V.\ Otherwise,\ it\ is\ unchanged.}}
+\DoxyCodeLine{00920\ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (x)\ Z.xor\_arr(V);}
+\DoxyCodeLine{00921\ }
+\DoxyCodeLine{00922\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ If\ the\ least\ significant\ bit\ of\ V\ is\ 1,\ we}}
+\DoxyCodeLine{00923\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Shift\ V,\ and\ then\ XOR\ it\ with\ R.}}
+\DoxyCodeLine{00924\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Otherwise,\ we\ just\ Shift\ it.}}
+\DoxyCodeLine{00925\ \ \ \ \ \ \ \ \ \ \ V.shift\_r(1);}
+\DoxyCodeLine{00926\ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (V.get()[3][3]\ \&\ 1\ ==\ 1)}
+\DoxyCodeLine{00927\ \ \ \ \ \ \ \ \ \ \ \ \ V.xor\_arr(R);}
+\DoxyCodeLine{00928\ }
+\DoxyCodeLine{00929\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Shift\ to\ the\ next\ bit.}}
+\DoxyCodeLine{00930\ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{byte}\ <<\ 1;}
+\DoxyCodeLine{00931\ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00932\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00933\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00934\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Z;}
+\DoxyCodeLine{00935\ \ \ \ \ \}}
+\DoxyCodeLine{00936\ }
+\DoxyCodeLine{00937\ }
+\DoxyCodeLine{00956\ \ \ \ \ \mbox{\hyperlink{classaes_1_1state__array}{state\_array}}\ \mbox{\hyperlink{namespaceaes_1_1gcm_aef9e152fad1ad6c97e90db2364ad5886}{GHASH}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classaes_1_1state}{state}}\&\ X,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classaes_1_1state__array}{state\_array}}\&\ H)\ \{}
+\DoxyCodeLine{00957\ \ \ \ \ \ \ \mbox{\hyperlink{classaes_1_1state__array}{state\_array}}\ Y;}
+\DoxyCodeLine{00958\ }
+\DoxyCodeLine{00959\ \ \ \ \ \ \ \textcolor{comment}{//\ Set\ the\ new\ generation\ of\ Y\ to\ (Y\ XOR\ X\_i)\ *\ H;}}
+\DoxyCodeLine{00960\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keyword}{const}\ \textcolor{keyword}{auto}\&\ array:\ X.get\_arrays())\ \{}
+\DoxyCodeLine{00961\ \ \ \ \ \ \ \ \ Y.xor\_arr(array);}
+\DoxyCodeLine{00962\ \ \ \ \ \ \ \ \ Y\ =\ \mbox{\hyperlink{namespaceaes_1_1gcm_ab95f2c83cf8f0c6a3a9bb4565d561a30}{mult}}(Y,\ H);}
+\DoxyCodeLine{00963\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00964\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Y;}
+\DoxyCodeLine{00965\ \ \ \ \ \}}
+\DoxyCodeLine{00966\ }
+\DoxyCodeLine{00967\ }
+\DoxyCodeLine{00979\ \ \ \ \ \mbox{\hyperlink{classaes_1_1state}{state}}\ \mbox{\hyperlink{namespaceaes_1_1gcm_a3dbcc886156cfc4f185cf64e9d43615d}{GCTR}}(\mbox{\hyperlink{classaes_1_1state}{state}}\ s,\ \mbox{\hyperlink{classaes_1_1state__array}{state\_array}}\ ICB)\ \{}
+\DoxyCodeLine{00980\ \ \ \ \ \ \ \textcolor{comment}{//\ Go\ through\ each\ array.}}
+\DoxyCodeLine{00981\ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keyword}{auto}\&\ array:\ s.get\_arrays())\ \{}
+\DoxyCodeLine{00982\ }
+\DoxyCodeLine{00983\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Generate\ a\ Pad\ for\ it.}}
+\DoxyCodeLine{00984\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ I\ KNOW.\ Unravelling\ the\ ICB,\ and\ then\ generating\ a\ state\ is\ not\ the\ pinnacle\ of\ efficiency,}}
+\DoxyCodeLine{00985\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ but\ creating\ a\ separate\ Cipher\ for\ handling\ a\ state\_array/state\ would\ length\ an\ already\ massive}}
+\DoxyCodeLine{00986\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ source\ file.}}
+\DoxyCodeLine{00987\ \ \ \ \ \ \ \ \ \textcolor{keyword}{auto}\ pad\ =\ \mbox{\hyperlink{classaes_1_1state__array}{state\_array}}(\mbox{\hyperlink{namespaceaes_ac0a5720b2d03ef9c2967b683bb9883e9}{Cipher}}(ICB.\mbox{\hyperlink{classaes_1_1state__array_a97f2a53d028757b6972fe7a3f81b994a}{unravel}}(),\ s.get\_key(),\ s.get\_rounds()));}
+\DoxyCodeLine{00988\ }
+\DoxyCodeLine{00989\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ XOR}}
+\DoxyCodeLine{00990\ \ \ \ \ \ \ \ \ array.xor\_arr(pad);}
+\DoxyCodeLine{00991\ }
+\DoxyCodeLine{00992\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Increment\ the\ nonce\ for\ the\ next\ array.}}
+\DoxyCodeLine{00993\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{namespaceaes_1_1gcm_ad32f2adca6691ec845600d8fa98c5bc3}{increment}}(ICB);}
+\DoxyCodeLine{00994\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00995\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ s;}
+\DoxyCodeLine{00996\ \ \ \ \ \}}
+\DoxyCodeLine{00997\ }
+\DoxyCodeLine{00998\ }
+\DoxyCodeLine{00999\ \ \ \ \ \textcolor{comment}{/*}}
+\DoxyCodeLine{01000\ \textcolor{comment}{\ \ \ \ \ *\ @brief\ Encrypt\ a\ message\ with\ AES-\/GCM}}
+\DoxyCodeLine{01001\ \textcolor{comment}{\ \ \ \ \ *\ @param\ in:\ The\ input\ string.}}
+\DoxyCodeLine{01002\ \textcolor{comment}{\ \ \ \ \ *\ @param\ k:\ The\ key.}}
+\DoxyCodeLine{01003\ \textcolor{comment}{\ \ \ \ \ *\ @param\ Nr:\ The\ number\ of\ rounds\ to\ perform.}}
+\DoxyCodeLine{01004\ \textcolor{comment}{\ \ \ \ \ *\ @param\ nonce:\ The\ nonce\ IV.}}
+\DoxyCodeLine{01005\ \textcolor{comment}{\ \ \ \ \ *\ @returns\ An\ encrypted\ string,\ with\ the\ hash\ block\ attached\ to\ the\ end}}
+\DoxyCodeLine{01006\ \textcolor{comment}{\ \ \ \ \ */}}
+\DoxyCodeLine{01007\ \ \ \ \ std::string\ Enc(\textcolor{keyword}{const}\ std::string\&\ in,\ \textcolor{keyword}{const}\ std::array<uint64\_t,\ 4>\&\ k,\ \textcolor{keyword}{const}\ uint64\_t\ Nr,\ uint64\_t\ nonce)\ \{}
+\DoxyCodeLine{01008\ }
+\DoxyCodeLine{01009\ \ \ \ \ \ \ \textcolor{comment}{//\ Generate\ our\ H\ hash\ subkey\ by\ encrypting\ a\ 0\ block.}}
+\DoxyCodeLine{01010\ \ \ \ \ \ \ \mbox{\hyperlink{classaes_1_1state__array}{state\_array}}\ H\ =\ \mbox{\hyperlink{namespaceaes_ac0a5720b2d03ef9c2967b683bb9883e9}{Cipher}}(\textcolor{stringliteral}{"{}\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0"{}},\ k,\ Nr);}
+\DoxyCodeLine{01011\ }
+\DoxyCodeLine{01012\ \ \ \ \ \ \ \textcolor{comment}{//\ Generate\ the\ J0\ that\ we'll\ use\ as\ a\ counter,\ based\ on\ our\ IV/Nonce.}}
+\DoxyCodeLine{01013\ \ \ \ \ \ \ \textcolor{keyword}{auto}\ J\ =\ \mbox{\hyperlink{namespaceaes_1_1gcm_aef9e152fad1ad6c97e90db2364ad5886}{GHASH}}(\mbox{\hyperlink{classaes_1_1state}{state}}(std::string(\textcolor{keyword}{reinterpret\_cast<}\textcolor{keywordtype}{char}*\textcolor{keyword}{>}(\&nonce),\ \textcolor{keyword}{sizeof}(nonce)),\ k,\ Nr),\ H);}
+\DoxyCodeLine{01014\ }
+\DoxyCodeLine{01015\ \ \ \ \ \ \ \textcolor{comment}{//\ This\ J\ is\ incremented\ for\ encrypting\ the\ message\ (We\ use\ J0\ for\ the\ hash).\ This\ is\ so\ that}}
+\DoxyCodeLine{01016\ \ \ \ \ \ \ \textcolor{comment}{//\ We\ can\ immediately\ check\ the\ hash\ on\ the\ decryption\ step,\ avoiding\ having\ to\ decrypt\ the\ message}}
+\DoxyCodeLine{01017\ \ \ \ \ \ \ \textcolor{comment}{//\ before\ we\ can\ verify\ if\ it's\ been\ modified}}
+\DoxyCodeLine{01018\ \ \ \ \ \ \ \textcolor{keyword}{auto}\ Jc\ =\ J;}
+\DoxyCodeLine{01019\ \ \ \ \ \ \ \mbox{\hyperlink{namespaceaes_1_1gcm_ad32f2adca6691ec845600d8fa98c5bc3}{increment}}(Jc);}
+\DoxyCodeLine{01020\ }
+\DoxyCodeLine{01021\ \ \ \ \ \ \ \textcolor{comment}{//\ Encrypt\ our\ message.}}
+\DoxyCodeLine{01022\ \ \ \ \ \ \ \textcolor{keyword}{auto}\ cipher\_state\ =\ \mbox{\hyperlink{classaes_1_1state}{state}}(in,\ k,\ Nr);}
+\DoxyCodeLine{01023\ \ \ \ \ \ \ cipher\_state\ =\ \mbox{\hyperlink{namespaceaes_1_1gcm_a3dbcc886156cfc4f185cf64e9d43615d}{GCTR}}(cipher\_state,\ Jc);}
+\DoxyCodeLine{01024\ }
+\DoxyCodeLine{01025\ \ \ \ \ \ \ \textcolor{comment}{//\ Generate\ our\ Hash.\ Basically,\ we\ run\ GHASH\ to\ get\ a\ single\ block\ or\ state\_array,\ and\ then\ turn\ that\ into}}
+\DoxyCodeLine{01026\ \ \ \ \ \ \ \textcolor{comment}{//\ A\ "{}state"{}\ of\ 1\ so\ that\ GCTR\ can\ encrypt\ it,\ and\ then\ pull\ out\ the\ singular\ block\ to\ get\ a\ state\_array\ again.}}
+\DoxyCodeLine{01027\ \ \ \ \ \ \ \textcolor{comment}{//\ One\ thing\ to\ note\ here,\ is\ that\ this\ block,\ called\ S\ in\ the\ Reference,}}
+\DoxyCodeLine{01028\ \ \ \ \ \ \ \textcolor{comment}{//\ Can\ optionally\ take\ AAD,\ or\ Additional\ Authenticated\ Data,\ which\ can\ be}}
+\DoxyCodeLine{01029\ \ \ \ \ \ \ \textcolor{comment}{//\ anything\ from\ destination\ IP,\ to\ Names\ (This\ data\ will\ be\ Authenticated,\ but\ must\ be\ sent\ in\ the\ clear)}}
+\DoxyCodeLine{01030\ \ \ \ \ \ \ \textcolor{comment}{//\ .\ For\ this\ implementation\ the\ only\ AAD\ that\ we\ would\ consider\ is\ the\ Nonce,\ but\ since\ it's\ already}}
+\DoxyCodeLine{01031\ \ \ \ \ \ \ \textcolor{comment}{//\ Included\ in\ the\ Hash\ via\ J,\ we\ just\ hash\ the\ cipher.}}
+\DoxyCodeLine{01032\ \ \ \ \ \ \ \textcolor{keyword}{auto}\ hash\ =\ \mbox{\hyperlink{namespaceaes_1_1gcm_a3dbcc886156cfc4f185cf64e9d43615d}{GCTR}}(\mbox{\hyperlink{classaes_1_1state}{state}}(\{\mbox{\hyperlink{namespaceaes_1_1gcm_aef9e152fad1ad6c97e90db2364ad5886}{GHASH}}(cipher\_state,\ H)\},\ k,\ Nr),\ J).get\_arrays()[0];}
+\DoxyCodeLine{01033\ }
+\DoxyCodeLine{01034\ \ \ \ \ \ \ \textcolor{comment}{//\ Add\ the\ hash\ to\ the\ end\ of\ the\ cipher\_state,\ and\ return\ it\ as\ one\ object.}}
+\DoxyCodeLine{01035\ \ \ \ \ \ \ cipher\_state.get\_arrays().emplace\_back(hash);}
+\DoxyCodeLine{01036\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ cipher\_state.unravel();}
+\DoxyCodeLine{01037\ \ \ \ \ \}}
+\DoxyCodeLine{01038\ }
+\DoxyCodeLine{01039\ }
+\DoxyCodeLine{01049\ \ \ \ \ std::string\ \mbox{\hyperlink{namespaceaes_1_1gcm_a88e45ea3280e56ca586a8fbe6bbd1d88}{Dec}}(\textcolor{keyword}{const}\ std::string\&\ in,\ \textcolor{keyword}{const}\ std::array<uint64\_t,\ 4>\&\ k,\ \textcolor{keyword}{const}\ uint64\_t\ Nr,\ uint64\_t\ nonce)\ \{}
+\DoxyCodeLine{01050\ }
+\DoxyCodeLine{01051\ \ \ \ \ \ \ \textcolor{comment}{//\ Generate\ our\ H\ hash\ subkey\ by\ encrypting\ a\ 0\ block.}}
+\DoxyCodeLine{01052\ \ \ \ \ \ \ \mbox{\hyperlink{classaes_1_1state__array}{state\_array}}\ H\ =\ \mbox{\hyperlink{namespaceaes_ac0a5720b2d03ef9c2967b683bb9883e9}{Cipher}}(\textcolor{stringliteral}{"{}\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0\(\backslash\)0"{}},\ k,\ Nr);}
+\DoxyCodeLine{01053\ }
+\DoxyCodeLine{01054\ \ \ \ \ \ \ \textcolor{comment}{//\ Generate\ the\ J0\ that\ we'll\ use\ as\ a\ counter,\ based\ on\ our\ IV/Nonce.}}
+\DoxyCodeLine{01055\ \ \ \ \ \ \ \textcolor{keyword}{auto}\ J\ =\ \mbox{\hyperlink{namespaceaes_1_1gcm_aef9e152fad1ad6c97e90db2364ad5886}{GHASH}}(\mbox{\hyperlink{classaes_1_1state}{state}}(std::string(\textcolor{keyword}{reinterpret\_cast<}\textcolor{keywordtype}{char}*\textcolor{keyword}{>}(\&nonce),\ \textcolor{keyword}{sizeof}(nonce)),\ k,\ Nr),\ H);}
+\DoxyCodeLine{01056\ }
+\DoxyCodeLine{01057\ \ \ \ \ \ \ \textcolor{comment}{//\ Get\ the\ cipher,\ and\ then\ pop\ the\ hash\ off\ the\ back.}}
+\DoxyCodeLine{01058\ \ \ \ \ \ \ \textcolor{keyword}{auto}\ cipher\_state\ =\ \mbox{\hyperlink{classaes_1_1state}{state}}(in,\ k,\ Nr);}
+\DoxyCodeLine{01059\ \ \ \ \ \ \ \textcolor{keyword}{auto}\ hash\ =\ cipher\_state.get\_arrays().back();}
+\DoxyCodeLine{01060\ \ \ \ \ \ \ cipher\_state.get\_arrays().pop\_back();}
+\DoxyCodeLine{01061\ }
+\DoxyCodeLine{01062\ \ \ \ \ \ \ \textcolor{comment}{//\ Then,\ compute\ the\ hash\ using\ J.}}
+\DoxyCodeLine{01063\ \ \ \ \ \ \ hash\ =\ \mbox{\hyperlink{namespaceaes_1_1gcm_a3dbcc886156cfc4f185cf64e9d43615d}{GCTR}}(\mbox{\hyperlink{classaes_1_1state}{state}}(\{hash\},\ k,\ Nr),\ J).get\_arrays()[0];}
+\DoxyCodeLine{01064\ }
+\DoxyCodeLine{01065\ \ \ \ \ \ \ \textcolor{comment}{//\ If\ they\ don't\ match\ then\ either\ the\ key\ was\ wrong,\ or\ one\ of\ the\ blocks\ has\ been\ modified.}}
+\DoxyCodeLine{01066\ \ \ \ \ \ \ \textcolor{comment}{//\ Either\ way,\ throw\ a\ runtime\ error.}}
+\DoxyCodeLine{01067\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (hash.unravel()\ !=\ \mbox{\hyperlink{namespaceaes_1_1gcm_aef9e152fad1ad6c97e90db2364ad5886}{GHASH}}(cipher\_state,\ H).unravel())\ \{}
+\DoxyCodeLine{01068\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{throw}\ std::runtime\_error(\textcolor{stringliteral}{"{}Message\ does\ not\ match!\ Refusing\ to\ decrypt!"{}});}
+\DoxyCodeLine{01069\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01070\ }
+\DoxyCodeLine{01071\ \ \ \ \ \ \ \textcolor{comment}{//\ If\ they\ do\ match,\ then\ increment\ J\ and\ proceed\ with\ decryption.}}
+\DoxyCodeLine{01072\ \ \ \ \ \ \ \mbox{\hyperlink{namespaceaes_1_1gcm_ad32f2adca6691ec845600d8fa98c5bc3}{increment}}(J);}
+\DoxyCodeLine{01073\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{namespaceaes_1_1gcm_a3dbcc886156cfc4f185cf64e9d43615d}{GCTR}}(cipher\_state,\ J).\mbox{\hyperlink{classaes_1_1state_a023b3f80fec69116ee6694a06b57bf83}{unravel}}();}
+\DoxyCodeLine{01074\ \ \ \ \ \}}
+\DoxyCodeLine{01075\ \ \ \}}
+\DoxyCodeLine{01076\ \}}
+
+\end{DoxyCode}

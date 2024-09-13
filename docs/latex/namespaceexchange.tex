@@ -1,0 +1,75 @@
+\doxysection{exchange Namespace Reference}
+\hypertarget{namespaceexchange}{}\label{namespaceexchange}\index{exchange@{exchange}}
+
+
+The namespace for Key-\/\+Exchange functions.  
+
+
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+uint64\+\_\+t \mbox{\hyperlink{namespaceexchange_ab37416384dcd834529cb06395e8ab9f2}{compute\+\_\+intermediary}} (const uint64\+\_\+t \&p, const uint64\+\_\+t \&g, const uint64\+\_\+t \&k)
+\begin{DoxyCompactList}\small\item\em Compute the intermeidary value to send across the wire. \end{DoxyCompactList}\item 
+uint64\+\_\+t \mbox{\hyperlink{namespaceexchange_a511ddac1db9f3e26b094bc0b765c0f65}{exchange\+\_\+keys}} (const bool \&server)
+\begin{DoxyCompactList}\small\item\em Exchange keys on an established connection. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The namespace for Key-\/\+Exchange functions. 
+
+\begin{DoxyRemark}{Remarks}
+This code has been created with reference to\+: \href{https://datatracker.ietf.org/doc/html/rfc2631\#section-2.1}{\texttt{ https\+://datatracker.\+ietf.\+org/doc/html/rfc2631\#section-\/2.\+1}} Herein referred to as "{}\+The Reference"{} 
+
+The Diffie-\/\+Hellman Key Exchange Algorithm is a means for two peers to negotiate a secure, shared key in an untrusted network. Each peer will generate a private key a, and b. They will then used A shared, public key containing a large prime number p, and a primitive root of p\+: g. Each party will take g, and raise it to their private key, sending it to the other party. Then, they will take their other peer\textquotesingle{}s intermediary key, and raise it by their own private key. This leads to the following values (g\texorpdfstring{$^\wedge$}{\string^}a)\texorpdfstring{$^\wedge$}{\string^}b, (g\texorpdfstring{$^\wedge$}{\string^}b)\texorpdfstring{$^\wedge$}{\string^}b, which when Simplied leads to g\texorpdfstring{$^\wedge$}{\string^}(ab), g\texorpdfstring{$^\wedge$}{\string^}(ba), which due to the associative property of multiplication will lead to the same, shared key. Every operation in this exchange is done with mod p. Due to the difficulty in computing discrete logarithms, while computing the intermediary and shared key is easy if a private key is known (Simply raising a value), it is infesible For an attacker to try and determine the private key used to create an intermediary given only the intermediary value and the public p,g. This makes Diffie-\/\+Hellman a one-\/way function. 
+
+In this implementation, The server will generate the public p and g, and will send them alongside the intermediary to the other party. 
+\end{DoxyRemark}
+
+
+\doxysubsection{Function Documentation}
+\Hypertarget{namespaceexchange_ab37416384dcd834529cb06395e8ab9f2}\index{exchange@{exchange}!compute\_intermediary@{compute\_intermediary}}
+\index{compute\_intermediary@{compute\_intermediary}!exchange@{exchange}}
+\doxysubsubsection{\texorpdfstring{compute\_intermediary()}{compute\_intermediary()}}
+{\footnotesize\ttfamily \label{namespaceexchange_ab37416384dcd834529cb06395e8ab9f2} 
+uint64\+\_\+t exchange\+::compute\+\_\+intermediary (\begin{DoxyParamCaption}\item[{const uint64\+\_\+t \&}]{p}{, }\item[{const uint64\+\_\+t \&}]{g}{, }\item[{const uint64\+\_\+t \&}]{k}{}\end{DoxyParamCaption})}
+
+
+
+Compute the intermeidary value to send across the wire. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em p} & The prime. \\
+\hline
+{\em g} & The g. \\
+\hline
+{\em k} & The private key. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The g\texorpdfstring{$\ast$}{*}\texorpdfstring{$\ast$}{*}k \% p via a reduced g\texorpdfstring{$\ast$}{*}\texorpdfstring{$\ast$}{*}r \% p 
+\end{DoxyReturn}
+\begin{DoxyRemark}{Remarks}
+This function uses the reduced calculation by generating q,r. \doxylink{namespaceprime_afd42038a213dacfa2cf643b7fd78a180}{prime\+::raise} is leagues fast enough to just do the computation directly, but if working with very large numbers, this would make a substantial difference on performance. 
+\end{DoxyRemark}
+\Hypertarget{namespaceexchange_a511ddac1db9f3e26b094bc0b765c0f65}\index{exchange@{exchange}!exchange\_keys@{exchange\_keys}}
+\index{exchange\_keys@{exchange\_keys}!exchange@{exchange}}
+\doxysubsubsection{\texorpdfstring{exchange\_keys()}{exchange\_keys()}}
+{\footnotesize\ttfamily \label{namespaceexchange_a511ddac1db9f3e26b094bc0b765c0f65} 
+uint64\+\_\+t exchange\+::exchange\+\_\+keys (\begin{DoxyParamCaption}\item[{const bool \&}]{server}{}\end{DoxyParamCaption})}
+
+
+
+Exchange keys on an established connection. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em server} & Whether this is the server. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The shared key to be used for communication 
+\end{DoxyReturn}
+\begin{DoxyRemark}{Remarks}
+See 2.\+1.\+1 of the Reference. 
+\end{DoxyRemark}

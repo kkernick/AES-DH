@@ -1,0 +1,132 @@
+\doxysection{aes\+::key Namespace Reference}
+\hypertarget{namespaceaes_1_1key}{}\label{namespaceaes_1_1key}\index{aes::key@{aes::key}}
+
+
+Manage the key.  
+
+
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+uint32\+\_\+t \mbox{\hyperlink{namespaceaes_1_1key_a6897098eedfdaf07c0f7b00047d053ab}{Rot\+Word}} (const uint32\+\_\+t \&word)
+\begin{DoxyCompactList}\small\item\em Rotate a word by one byte left. \end{DoxyCompactList}\item 
+uint32\+\_\+t \mbox{\hyperlink{namespaceaes_1_1key_aa37c4a1b8399e8d6dab153bac9526f28}{Sub\+Word}} (const uint32\+\_\+t \&word)
+\begin{DoxyCompactList}\small\item\em Substitue the bytes in a key-\/schedule word. \end{DoxyCompactList}\item 
+std\+::vector$<$ uint32\+\_\+t $>$ \mbox{\hyperlink{namespaceaes_1_1key_ad91c7cb9402fbe2fa12cb7ca048dd58a}{Expansion}} (const std\+::array$<$ uint64\+\_\+t, 4 $>$ \&key, const uint64\+\_\+t \&Nk)
+\begin{DoxyCompactList}\small\item\em Expand a set of keys. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+uint32\+\_\+t \mbox{\hyperlink{namespaceaes_1_1key_a48c4a1c357aa64e2ff50d205301ef6fd}{Rcon}} \mbox{[}10\mbox{]}
+\begin{DoxyCompactList}\small\item\em The round constants. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Manage the key. 
+
+\doxysubsection{Function Documentation}
+\Hypertarget{namespaceaes_1_1key_ad91c7cb9402fbe2fa12cb7ca048dd58a}\index{aes::key@{aes::key}!Expansion@{Expansion}}
+\index{Expansion@{Expansion}!aes::key@{aes::key}}
+\doxysubsubsection{\texorpdfstring{Expansion()}{Expansion()}}
+{\footnotesize\ttfamily \label{namespaceaes_1_1key_ad91c7cb9402fbe2fa12cb7ca048dd58a} 
+std\+::vector$<$ uint32\+\_\+t $>$ aes\+::key\+::\+Expansion (\begin{DoxyParamCaption}\item[{const std\+::array$<$ uint64\+\_\+t, 4 $>$ \&}]{key}{, }\item[{const uint64\+\_\+t \&}]{Nk}{}\end{DoxyParamCaption})}
+
+
+
+Expand a set of keys. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em key} & The shared key array. \\
+\hline
+{\em Nk} & The size of the key in words. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+A vector of the keys to use. 
+\end{DoxyReturn}
+\begin{DoxyRemark}{Remarks}
+This function is a verbatim translation of Algorithm 2 of the Reference. 
+
+key is always exchanged as 4 64bit numbers, or 256 bits total. Nk simply determines where the cutoff is made, thus removing the last 64 bits for AES-\/192, or the last 128 for AES-\/128. 
+
+When implementing this algorithm, there are two real options\+: Either do it like the Reference, where we treat the key schedule as a collection of words Or treat it like a collection of individual bytes. The former will be faster, but will also require bitwise operation to index positions in each word. The latter, on the other hand Makes more sense when working on a per key level, but can be confusing when looking at the whole schedule. We followed the Reference. 
+
+In essence this function takes a "{}small"{} key, and expands it to be large enough for all of AES\textquotesingle{} rounds, such that it looks random. See Section 5.\+8 of the 2002 Paper for more details. 
+
+For a more visual explanation, see Figure 6, 7, and 8 of the Reference. 
+\end{DoxyRemark}
+\Hypertarget{namespaceaes_1_1key_a6897098eedfdaf07c0f7b00047d053ab}\index{aes::key@{aes::key}!RotWord@{RotWord}}
+\index{RotWord@{RotWord}!aes::key@{aes::key}}
+\doxysubsubsection{\texorpdfstring{RotWord()}{RotWord()}}
+{\footnotesize\ttfamily \label{namespaceaes_1_1key_a6897098eedfdaf07c0f7b00047d053ab} 
+uint32\+\_\+t aes\+::key\+::\+Rot\+Word (\begin{DoxyParamCaption}\item[{const uint32\+\_\+t \&}]{word}{}\end{DoxyParamCaption})}
+
+
+
+Rotate a word by one byte left. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em word} & The word. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The rotated word. 
+\end{DoxyReturn}
+\begin{DoxyRemark}{Remarks}
+See Figure 5.\+10 of the Reference 
+\end{DoxyRemark}
+\Hypertarget{namespaceaes_1_1key_aa37c4a1b8399e8d6dab153bac9526f28}\index{aes::key@{aes::key}!SubWord@{SubWord}}
+\index{SubWord@{SubWord}!aes::key@{aes::key}}
+\doxysubsubsection{\texorpdfstring{SubWord()}{SubWord()}}
+{\footnotesize\ttfamily \label{namespaceaes_1_1key_aa37c4a1b8399e8d6dab153bac9526f28} 
+uint32\+\_\+t aes\+::key\+::\+Sub\+Word (\begin{DoxyParamCaption}\item[{const uint32\+\_\+t \&}]{word}{}\end{DoxyParamCaption})}
+
+
+
+Substitue the bytes in a key-\/schedule word. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em word} & The word \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The modified word. 
+\end{DoxyReturn}
+\begin{DoxyRemark}{Remarks}
+This uses the exact same algorithm as Sub\+Bytes, and as with that step, the Reference just uses a lookup table rather than manually computig it. 
+
+See Figure 5.\+11 of the Reference. 
+\end{DoxyRemark}
+
+
+\doxysubsection{Variable Documentation}
+\Hypertarget{namespaceaes_1_1key_a48c4a1c357aa64e2ff50d205301ef6fd}\index{aes::key@{aes::key}!Rcon@{Rcon}}
+\index{Rcon@{Rcon}!aes::key@{aes::key}}
+\doxysubsubsection{\texorpdfstring{Rcon}{Rcon}}
+{\footnotesize\ttfamily \label{namespaceaes_1_1key_a48c4a1c357aa64e2ff50d205301ef6fd} 
+uint32\+\_\+t aes\+::key\+::\+Rcon\mbox{[}10\mbox{]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=\ \{}
+\DoxyCodeLine{\ \ \ \ \ \ 0x01000000,\ 0x02000000,\ 0x04000000,\ 0x08000000,\ 0x10000000,}
+\DoxyCodeLine{\ \ \ \ \ \ 0x20000000,\ 0x40000000,\ 0x80000000,\ 0x1b000000,\ 0x36000000}
+\DoxyCodeLine{\ \ \ \ \}}
+
+\end{DoxyCode}
+
+
+The round constants. 
+
+\begin{DoxyRemark}{Remarks}
+This is copied from Table 5 of the Reference. 
+
+The Reference likes to split up words into the individual bytes, but we just treat the whole word as one number. 
+
+These values can be computed via r(i)= x(i−4)/4 mod(x8+x4+x3+x+1) 
+
+Why do we use these round constants? It eliminates symmetries. See\+: The 2002 Paper for more details. 
+\end{DoxyRemark}

@@ -1,0 +1,217 @@
+\doxysection{util.\+h}
+\hypertarget{util_8h_source}{}\label{util_8h_source}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <iostream>}\ \ \ \textcolor{comment}{//\ For\ writing\ to\ console.}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <array>}\ \ \ \ \ \ \textcolor{comment}{//\ For\ std::array}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}exchange.h"{}}\ \textcolor{comment}{//\ To\ exchange\ the\ DH\ keys.}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}aes.h"{}}\ \ \ \ \ \ \textcolor{comment}{//\ For\ AES\ Encryption.}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}hmac.h"{}}\ \ \ \ \ \textcolor{comment}{//\ To\ generate\ an\ HMAC\ for\ the\ message.}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00016\ \textcolor{keyword}{namespace\ }\mbox{\hyperlink{namespaceutil}{util}}\ \{}
+\DoxyCodeLine{00017\ \ \ \textcolor{comment}{//\ A\ macro\ to\ prompt,\ then\ return\ from\ a\ function.}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\ \ \#define\ prompt\_return(msg)\ \{util::prompt(msg);\ return;\}}}
+\DoxyCodeLine{00019\ \ \ \textcolor{comment}{//\ A\ macro\ to\ prompt,\ then\ break\ from\ a\ loop/switch}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\ \ \#define\ prompt\_break(msg)\ \{util::prompt(msg);\ break;\}}}
+\DoxyCodeLine{00021\ \ \ \textcolor{comment}{//\ A\ macro\ to\ prompty,\ then\ continue\ from\ a\ loop}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\ \ \#define\ prompt\_continue(msg)\ \{util::prompt(msg);\ continue;\}}}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00029\ \ \ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{namespaceutil_afe195e2af873c1660fcf6e15c343675e}{clear}}()\ \{std::cout\ <<\ \textcolor{stringliteral}{"{}\(\backslash\)033[2J\(\backslash\)033[1;1H"{}};\}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00042\ \ \ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T\ =\ \textcolor{keywordtype}{bool}>\ \textcolor{keyword}{inline}\ T\ \mbox{\hyperlink{namespaceutil_a9d6c0fde8a55acf8e899b29ad5635627}{input}}(\textcolor{keyword}{const}\ std::string\&\ title,\ \textcolor{keyword}{const}\ T\&\ error\_ret\ =\ T())\ \{}
+\DoxyCodeLine{00043\ \ \ \ \ T\ ret;}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{comment}{//\ Print\ the\ title,\ get\ the\ input.}}
+\DoxyCodeLine{00046\ \ \ \ \ std::cout\ <<\ title\ <<\ std::endl;}
+\DoxyCodeLine{00047\ \ \ \ \ std::cin\ >>\ ret;}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{comment}{//\ If\ it\ failed,\ clear\ the\ buffer\ and\ set\ the\ error\ return.}}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keyword}{auto}\ f\ =\ std::cin.fail();}
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{keywordflow}{if}\ (f)\ \{}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ std::cin.clear();}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ ret\ =\ error\_ret;}
+\DoxyCodeLine{00054\ \ \ \ \ \}}
+\DoxyCodeLine{00055\ }
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{comment}{//\ Skip\ past\ whatever\ garbage\ the\ user\ may\ have\ added.}}
+\DoxyCodeLine{00057\ \ \ \ \ std::cin.ignore(std::numeric\_limits<std::streamsize>::max(),\ \textcolor{charliteral}{'\(\backslash\)n'});}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{comment}{//\ Return.}}
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{keywordflow}{return}\ ret;}
+\DoxyCodeLine{00061\ \ \ \}}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ }
+\DoxyCodeLine{00069\ \ \ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{namespaceutil_a40fb2baa02be896bc3bb581a6d80e718}{prompt}}(\textcolor{keyword}{const}\ std::string\&\ message)\ \{}
+\DoxyCodeLine{00070\ \ \ \ \ std::cout\ <<\ message\ <<\ std::endl;}
+\DoxyCodeLine{00071\ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Press\ Enter\ to\ Continue"{}}\ <<\ std::endl;}
+\DoxyCodeLine{00072\ \ \ \ \ getchar();}
+\DoxyCodeLine{00073\ \ \ \}}
+\DoxyCodeLine{00074\ }
+\DoxyCodeLine{00075\ }
+\DoxyCodeLine{00088\ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{namespaceutil_a0b2991073e807f963358270921c4e6f0}{construct\_shared\_key}}(std::array<uint64\_t,\ 4>\&\ sk,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{bool}\&\ server)\ \{}
+\DoxyCodeLine{00089\ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Exchanging\ Keys..."{}}\ <<\ std::endl;}
+\DoxyCodeLine{00090\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ x\ =\ 0;\ x\ <\ 4;\ ++x)\ \{}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ sk[x]\ =\ \mbox{\hyperlink{namespaceexchange_a511ddac1db9f3e26b094bc0b765c0f65}{exchange::exchange\_keys}}(server);}
+\DoxyCodeLine{00092\ \ \ \ \ \}}
+\DoxyCodeLine{00093\ }
+\DoxyCodeLine{00094\ \ \ \ \ \mbox{\hyperlink{namespaceutil_a40fb2baa02be896bc3bb581a6d80e718}{prompt}}(\textcolor{stringliteral}{"{}Complete!\ Ensure\ that\ the\ Shared\ Key\ matches!"{}});}
+\DoxyCodeLine{00095\ \ \ \}}
+\DoxyCodeLine{00096\ }
+\DoxyCodeLine{00097\ }
+\DoxyCodeLine{00102\ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{namespaceutil_a188170d9ebcd68f74dfe4f44d1fdbd51}{receive\_message}}(\textcolor{keyword}{const}\ std::array<uint64\_t,\ 4>\&\ sk)\ \{}
+\DoxyCodeLine{00103\ }
+\DoxyCodeLine{00104\ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Receiving\ Key\ Size..."{}}\ <<\ std::endl;}
+\DoxyCodeLine{00105\ \ \ \ \ \textcolor{keyword}{auto}\ Nr\ =\ \mbox{\hyperlink{namespacenetwork_aece659d7f6b65d51b84c73a53c30f468}{network::recv\_value<uint64\_t>}}();}
+\DoxyCodeLine{00106\ }
+\DoxyCodeLine{00107\ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Receiving\ Ciphertext..."{}}\ <<\ std::endl;}
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{keyword}{auto}\ message\ =\ \mbox{\hyperlink{namespacenetwork_a478e5696c416be715995595225c723d1}{network::recv\_string}}();}
+\DoxyCodeLine{00109\ }
+\DoxyCodeLine{00110\ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Receiving\ Nonce..."{}}\ <<\ std::endl;}
+\DoxyCodeLine{00111\ \ \ \ \ \textcolor{keyword}{auto}\ nonce\_packet\ =\ \mbox{\hyperlink{namespacenetwork_af0880c416ff05d41d94d9421d45a50ef}{network::recv\_packet}}();}
+\DoxyCodeLine{00112\ }
+\DoxyCodeLine{00113\ \ \ \ \ \textcolor{comment}{//\ Get\ the\ actual\ Nonce.}}
+\DoxyCodeLine{00114\ \ \ \ \ \textcolor{keyword}{auto}\ str\ =\ std::string(\&nonce\_packet.data[0],\ PACKET\_SIZE);}
+\DoxyCodeLine{00115\ \ \ \ \ uint64\_t\ nonce\ =\ 0;}
+\DoxyCodeLine{00116\ \ \ \ \ std::istringstream\ (str)\ >>\ nonce;}
+\DoxyCodeLine{00117\ }
+\DoxyCodeLine{00118\ \ \ \ \ \textcolor{comment}{//\ GCM\ doesn't\ include\ an\ HMAC.}}
+\DoxyCodeLine{00119\ \ \ \ \ \textcolor{keywordflow}{if}\ (nonce\_packet.m\ ==\ network::meta::IV)\ \{}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \textcolor{keywordflow}{try}\ \{}
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Message:\ "{}}\ <<\ \mbox{\hyperlink{namespaceaes_1_1gcm_a88e45ea3280e56ca586a8fbe6bbd1d88}{aes::gcm::Dec}}(message,\ sk,\ Nr,\ nonce)\ <<\ std::endl;}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \textcolor{keywordflow}{catch}\ (std::runtime\_error\&\ e)\ \{prompt\_return(e.what());\}}
+\DoxyCodeLine{00124\ \ \ \ \ \}}
+\DoxyCodeLine{00125\ }
+\DoxyCodeLine{00126\ \ \ \ \ \textcolor{keywordflow}{else}\ \{}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Receiving\ HMAC..."{}}\ <<\ std::endl;}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ \textcolor{keyword}{auto}\ \mbox{\hyperlink{namespacehmac}{hmac}}\ =\ \mbox{\hyperlink{namespacenetwork_a478e5696c416be715995595225c723d1}{network::recv\_string}}();}
+\DoxyCodeLine{00129\ }
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \textcolor{comment}{//\ Check\ that\ the\ HMAC\ matches\ what\ we\ expect.\ Refuse\ to\ decrypt\ unless\ it\ matches.}}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespacehmac}{hmac}}\ !=\ \mbox{\hyperlink{namespacehmac_a3c1fde6727e278b329d1dd3bb4ebd4f2}{hmac::generate}}(message,\ sk,\ Nr))}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ prompt\_return(\textcolor{stringliteral}{"{}HMAC\ does\ not\ match!\ Message\ has\ been\ altered!"{}});}
+\DoxyCodeLine{00133\ }
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \textcolor{comment}{//\ A\ NONCE\ means\ we're\ using\ CTR.}}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (nonce\_packet.m\ ==\ network::meta::NONCE)\ \{}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Message:\ "{}}\ <<\ \mbox{\hyperlink{namespaceaes_aa0147bc1291533ed0066f04b9ded820d}{aes::Ctr}}(message,\ sk,\ Nr,\ nonce)\ <<\ std::endl;}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \textcolor{comment}{//\ An\ EMPTY\ means\ we're\ using\ ECB.}}
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (nonce\_packet.m\ ==\ network::meta::EMPTY)\ \{}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Message:\ "{}}\ <<\ \mbox{\hyperlink{namespaceaes_a31f8f45354772a80f86f298f7a0c5739}{aes::InvCipher}}(message,\ sk,\ Nr)\ <<\ std::endl;}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00142\ }
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \textcolor{comment}{//\ Something\ else\ means\ the\ peer\ did\ something\ wrong.}}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ prompt\_return(\textcolor{stringliteral}{"{}Peer\ sent\ invalid\ packet!"{}});}
+\DoxyCodeLine{00145\ \ \ \ \ \}}
+\DoxyCodeLine{00146\ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Press\ Enter\ to\ Continue"{}}\ <<\ std::endl;}
+\DoxyCodeLine{00147\ \ \ \ \ getchar();}
+\DoxyCodeLine{00148\ \ \ \}}
+\DoxyCodeLine{00149\ }
+\DoxyCodeLine{00150\ }
+\DoxyCodeLine{00155\ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{namespaceutil_a61dbcb94ddfaf9621d03326930f918f0}{send\_message}}(\textcolor{keyword}{const}\ std::array<uint64\_t,\ 4>\&\ sk)\ \{}
+\DoxyCodeLine{00156\ \ \ \ \ \textcolor{comment}{//\ Get\ the\ message\ to\ encrypt.}}
+\DoxyCodeLine{00157\ \ \ \ \ std::string\ message;}
+\DoxyCodeLine{00158\ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Enter\ the\ message:"{}}\ <<\ std::endl;}
+\DoxyCodeLine{00159\ \ \ \ \ std::getline(std::cin,\ message);}
+\DoxyCodeLine{00160\ }
+\DoxyCodeLine{00161\ \ \ \ \ \textcolor{comment}{//\ Get\ the\ amount\ of\ rounds.}}
+\DoxyCodeLine{00162\ \ \ \ \ \textcolor{keyword}{auto}\ size\ =\ \mbox{\hyperlink{namespaceutil_a9d6c0fde8a55acf8e899b29ad5635627}{input<int>}}(\textcolor{stringliteral}{"{}What\ size\ key?\(\backslash\)n1.\ 128\(\backslash\)n2.\ 192\(\backslash\)n3.\ 256\(\backslash\)n"{}},\ -\/1);}
+\DoxyCodeLine{00163\ \ \ \ \ \textcolor{keywordflow}{if}\ (size\ <\ 1\ ||\ size\ >\ 3)\ prompt\_return(\textcolor{stringliteral}{"{}Invalid\ selection"{}});}
+\DoxyCodeLine{00164\ \ \ \ \ uint64\_t\ Nr\ =\ size\ ==\ 1\ ?\ 10\ :\ size\ ==\ 2\ ?\ 12\ :\ 14;}
+\DoxyCodeLine{00165\ }
+\DoxyCodeLine{00166\ \ \ \ \ \textcolor{comment}{//\ Get\ the\ mode.}}
+\DoxyCodeLine{00167\ \ \ \ \ \textcolor{keyword}{auto}\ option\ =\ \mbox{\hyperlink{namespaceutil_a9d6c0fde8a55acf8e899b29ad5635627}{input<int>}}(\textcolor{stringliteral}{"{}What\ mode?\(\backslash\)n1.\ ECB\(\backslash\)n2.\ CTR\(\backslash\)n3.\ GCM"{}},\ -\/1);}
+\DoxyCodeLine{00168\ \ \ \ \ \textcolor{keywordflow}{if}\ (option\ <\ 1\ ||\ option\ >\ 3)\ prompt\_return(\textcolor{stringliteral}{"{}Invalid\ selection"{}});}
+\DoxyCodeLine{00169\ }
+\DoxyCodeLine{00170\ \ \ \ \ \textcolor{comment}{/*}}
+\DoxyCodeLine{00171\ \textcolor{comment}{\ \ \ \ *\ The\ communication\ between\ the\ peers\ is\ as\ follows:}}
+\DoxyCodeLine{00172\ \textcolor{comment}{\ \ \ \ *}}
+\DoxyCodeLine{00173\ \textcolor{comment}{\ \ \ \ *\ INITIATOR\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ RECIPIENT}}
+\DoxyCodeLine{00174\ \textcolor{comment}{\ \ \ \ *\ \ MESSAGE\ \ \ \ \ \ \ -\/-\/>}}
+\DoxyCodeLine{00175\ \textcolor{comment}{\ \ \ \ *\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ <-\/-\/\ \ \ \ \ \ ACK/REFUSE}}
+\DoxyCodeLine{00176\ \textcolor{comment}{\ \ \ \ *\ \ \ \ NR\ \ \ \ \ \ \ \ \ \ -\/-\/>}}
+\DoxyCodeLine{00177\ \textcolor{comment}{\ \ \ \ *\ CIPHERTEXT\ \ \ \ \ -\/-\/>}}
+\DoxyCodeLine{00178\ \textcolor{comment}{\ \ \ \ *\ NONCE/EMPTY/IV\ -\/-\/>\ \ \ \ IV:\ GCM-\/DECRYPT}}
+\DoxyCodeLine{00179\ \textcolor{comment}{\ \ \ \ *\ \ \ HMAC\ \ \ \ \ \ \ \ \ -\/-\/>}}
+\DoxyCodeLine{00180\ \textcolor{comment}{\ \ \ \ *\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ CHECK\ HMAC}}
+\DoxyCodeLine{00181\ \textcolor{comment}{\ \ \ \ *\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ DECRYPT}}
+\DoxyCodeLine{00182\ \textcolor{comment}{\ \ \ \ */}}
+\DoxyCodeLine{00183\ }
+\DoxyCodeLine{00184\ \ \ \ \ \textcolor{comment}{//\ Let\ the\ peer\ know\ we\ want\ to\ send\ a\ message.}}
+\DoxyCodeLine{00185\ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Reaching\ out\ to\ the\ Peer..."{}}\ <<\ std::endl;}
+\DoxyCodeLine{00186\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespacenetwork_a3812b264b0c3850ea556cc0dc4e337ca}{network::send\_packet}}(\{.m\ =\ network::meta::MESSAGE\})\ ==\ -\/1)}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ prompt\_return(\textcolor{stringliteral}{"{}Failed\ to\ communicate\ with\ peer!"{}});}
+\DoxyCodeLine{00188\ }
+\DoxyCodeLine{00189\ \ \ \ \ \textcolor{comment}{//\ Get\ their\ response.\ Be\ generous\ with\ the\ response}}
+\DoxyCodeLine{00190\ \ \ \ \ \textcolor{keyword}{auto}\ response\ =\ \mbox{\hyperlink{namespacenetwork_af0880c416ff05d41d94d9421d45a50ef}{network::recv\_packet}}(30);}
+\DoxyCodeLine{00191\ \ \ \ \ \textcolor{keywordflow}{switch}\ (response.m)\ \{}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ network::meta::ACK:\ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00193\ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ network::meta::REFUSED:\ prompt\_return(\textcolor{stringliteral}{"{}Peer\ refused\ to\ accept\ message!"{}});}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ network::meta::ERROR:\ prompt\_return(\textcolor{stringliteral}{"{}Could\ not\ communicate\ with\ peer!"{}});}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ network::meta::MESSAGE:\ prompt\_return(\textcolor{stringliteral}{"{}Cannot\ send\ two\ messages\ at\ once!\ One\ peer\ must\ Listen!"{}});}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \textcolor{keywordflow}{default}:\ prompt\_return(\textcolor{stringliteral}{"{}Peer\ sent\ invalid\ response!"{}});}
+\DoxyCodeLine{00197\ \ \ \ \ \}}
+\DoxyCodeLine{00198\ }
+\DoxyCodeLine{00199\ \ \ \ \ \textcolor{comment}{//\ Even\ though\ ECB\ doesn't\ use\ this,\ we\ generate\ it\ for\ the\ others.}}
+\DoxyCodeLine{00200\ \ \ \ \ \textcolor{keyword}{const}\ uint64\_t\ nonce\ =\ std::rand();}
+\DoxyCodeLine{00201\ }
+\DoxyCodeLine{00202\ \ \ \ \ \textcolor{comment}{//\ Get\ the\ cipher.}}
+\DoxyCodeLine{00203\ \ \ \ \ \textcolor{keyword}{auto}\ cipher\ =\ option\ ==\ 1\ ?}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \mbox{\hyperlink{namespaceaes_ac0a5720b2d03ef9c2967b683bb9883e9}{aes::Cipher}}(message,\ sk,\ Nr)\ :\ option\ ==\ 2\ ?}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \mbox{\hyperlink{namespaceaes_aa0147bc1291533ed0066f04b9ded820d}{aes::Ctr}}(message,\ sk,\ Nr,\ nonce)\ :}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ aes::gcm::Enc(message,\ sk,\ Nr,\ nonce);}
+\DoxyCodeLine{00207\ }
+\DoxyCodeLine{00208\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespacenetwork_a8ce2596c5463ea3c6ddbdda72ae810f4}{network::send\_value<uint64\_t>}}(Nr)\ ==\ -\/1)}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ prompt\_return(\textcolor{stringliteral}{"{}Failed\ to\ send\ Key\ Size!"{}});}
+\DoxyCodeLine{00210\ }
+\DoxyCodeLine{00211\ \ \ \ \ \textcolor{comment}{//\ Send\ that\ cipher\ across.}}
+\DoxyCodeLine{00212\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespacenetwork_ae1bd80403173048a0fc3cca5666a5c2a}{network::send\_string}}(cipher)\ ==\ -\/1)}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ prompt\_return(\textcolor{stringliteral}{"{}Failed\ to\ send\ ciphertext!"{}});}
+\DoxyCodeLine{00214\ }
+\DoxyCodeLine{00215\ \ \ \ \ \textcolor{comment}{//\ ECB;\ we\ send\ an\ empty\ packet\ as\ there\ is\ no\ nonce.}}
+\DoxyCodeLine{00216\ \ \ \ \ \textcolor{keywordflow}{if}\ (option\ ==\ 1)\ \{}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespacenetwork_a3812b264b0c3850ea556cc0dc4e337ca}{network::send\_packet}}(\{.m\ =\ network::meta::EMPTY\})\ ==\ -\/1)}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \ \ prompt\_return(\textcolor{stringliteral}{"{}Failed\ to\ send\ empty\ packet!"{}});}
+\DoxyCodeLine{00219\ \ \ \ \ \}}
+\DoxyCodeLine{00220\ }
+\DoxyCodeLine{00221\ \ \ \ \ \textcolor{comment}{//CTR;\ we\ need\ to\ create\ and\ send\ the\ NONCE.}}
+\DoxyCodeLine{00222\ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (option\ ==\ 2)\ \{}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespacenetwork_a8ce2596c5463ea3c6ddbdda72ae810f4}{network::send\_value}}(nonce,\ network::meta::NONCE)\ ==\ -\/1)}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ prompt\_return(\textcolor{stringliteral}{"{}Failed\ to\ send\ nonce!"{}});}
+\DoxyCodeLine{00225\ \ \ \ \ \}}
+\DoxyCodeLine{00226\ }
+\DoxyCodeLine{00227\ \ \ \ \ \textcolor{comment}{//\ GCM\ does\ not\ generate\ an\ HMAC,\ so\ just\ return\ once\ we've\ sent\ the\ IV.}}
+\DoxyCodeLine{00228\ \ \ \ \ \textcolor{keywordflow}{if}\ (option\ ==\ 3)\ \{}
+\DoxyCodeLine{00229\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespacenetwork_a8ce2596c5463ea3c6ddbdda72ae810f4}{network::send\_value}}(nonce,\ network::meta::IV)\ ==\ -\/1)}
+\DoxyCodeLine{00230\ \ \ \ \ \ \ \ \ prompt\_return(\textcolor{stringliteral}{"{}Failed\ to\ send\ IV!"{}});}
+\DoxyCodeLine{00231\ \ \ \ \ \}}
+\DoxyCodeLine{00232\ \ \ \ \ \textcolor{keywordflow}{else}\ \{}
+\DoxyCodeLine{00233\ \ \ \ \ \ \ \textcolor{comment}{//\ Generate\ the\ HMAC\ and\ send\ it\ across.}}
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \textcolor{keyword}{auto}\ \mbox{\hyperlink{namespacehmac}{hmac}}\ =\ \mbox{\hyperlink{namespacehmac_a3c1fde6727e278b329d1dd3bb4ebd4f2}{hmac::generate}}(cipher,\ sk,\ Nr);}
+\DoxyCodeLine{00235\ }
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{namespacenetwork_ae1bd80403173048a0fc3cca5666a5c2a}{network::send\_string}}(\mbox{\hyperlink{namespacehmac}{hmac}})\ ==\ -\/1)}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ prompt\_return(\textcolor{stringliteral}{"{}Failed\ to\ send\ HMAC!"{}});}
+\DoxyCodeLine{00238\ \ \ \ \ \}}
+\DoxyCodeLine{00239\ \ \ \}}
+\DoxyCodeLine{00240\ }
+\DoxyCodeLine{00241\ }
+\DoxyCodeLine{00247\ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{namespaceutil_a5c845d244182d6df572c884e56fd7701}{acknowledge}}(\textcolor{keyword}{const}\ std::string\&\ what)\ \{}
+\DoxyCodeLine{00248\ \ \ \ \ \textcolor{comment}{//\ Do\ we\ want\ to\ accept\ this?}}
+\DoxyCodeLine{00249\ \ \ \ \ \textcolor{keyword}{auto}\ response\ =\ \mbox{\hyperlink{namespaceutil_a9d6c0fde8a55acf8e899b29ad5635627}{input<std::string>}}(what\ +\ \textcolor{stringliteral}{"{}:\ Acknowledge?\ (y/n)"{}});}
+\DoxyCodeLine{00250\ }
+\DoxyCodeLine{00251\ \ \ \ \ \textcolor{comment}{//\ Send\ an\ ACK.}}
+\DoxyCodeLine{00252\ \ \ \ \ \textcolor{keywordflow}{if}\ (response\ ==\ \textcolor{stringliteral}{"{}y"{}}\ ||\ response\ ==\ \textcolor{stringliteral}{"{}Y"{}})\ \{}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \mbox{\hyperlink{namespacenetwork_a3812b264b0c3850ea556cc0dc4e337ca}{network::send\_packet}}(\{.m\ =\ network::meta::ACK\});}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00255\ \ \ \ \ \}}
+\DoxyCodeLine{00256\ }
+\DoxyCodeLine{00257\ \ \ \ \ \textcolor{comment}{//\ Send\ a\ REFUSED.}}
+\DoxyCodeLine{00258\ \ \ \ \ \mbox{\hyperlink{namespacenetwork_a3812b264b0c3850ea556cc0dc4e337ca}{network::send\_packet}}(\{.m\ =\ network::meta::REFUSED\});}
+\DoxyCodeLine{00259\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00260\ \ \ \}}
+\DoxyCodeLine{00261\ \}}
+
+\end{DoxyCode}

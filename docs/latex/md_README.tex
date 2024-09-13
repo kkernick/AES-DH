@@ -1,0 +1,290 @@
+\chapter{AES-\/\+DH}
+\hypertarget{md_README}{}\label{md_README}\index{AES-\/DH@{AES-\/DH}}
+\label{md_README_autotoc_md0}%
+\Hypertarget{md_README_autotoc_md0}%
+
+
+This repository contains a working implementation of both Diffie-\/\+Hellman key exchange, and AES encryption, with an emphasis on heavy documentation in order to better understand both algorithms, and how they may be used together in a fully functional, network based application. It serves as an educational aid for those wanting to better understand these two algorithms, how they work underneath the hood, and how they might be implemented in code.
+
+\begin{DoxyWarning}{Warning}
+The implementation of AES and Diffie-\/\+Hellman within this repository is for {\bfseries{educational purposes only!}} They should not be considered cryptographically secure, and go out of their way to choose inefficient methods in order to better understand the underlying concepts.
+\end{DoxyWarning}
+\hypertarget{md_README_autotoc_md1}{}\doxysection{\texorpdfstring{Where Do I Start?}{Where Do I Start?}}\label{md_README_autotoc_md1}
+There’s three routes to approach this repository\+:
+\begin{DoxyItemize}
+\item If you want to see AES and DH in action, run the pre-\/compiled (Or, if you don’t trust random programs from the internet, compile it yourself! (See BUILDING.\+md)) program, and run it from the command line! There’s two programs to choose from\+:
+\begin{DoxyItemize}
+\item {\ttfamily main}/{\ttfamily main\+\_\+pc} uses AES and DH to allow two instances of the program to securely connect and exchange messages over the network by utilizing sockets!
+\item {\ttfamily aes}/{\ttfamily aes\+\_\+pc} is a command-\/line utility that allows you to encrypt/decrypt strings and files using the implementation of AES!
+\end{DoxyItemize}
+\item If you want to dive into details and inner workings, simply open one of the source code files and start reading! This implementation is written in C++, but the codebase strives to be understandable even from those who may not be familiar with C++ or programming at all. Source files are heavily documented to explain what each step does, and why this step is necessary\+:
+\begin{DoxyItemize}
+\item Interested in how to develop a command line utility in C++? {\ttfamily aes.\+cpp} contains the source code for the {\ttfamily aes} application, and shows interfacing with the AES implementation and reading in files and user input.
+\item Interested in getting into the weeds of AES? {\ttfamily \doxylink{aes_8h_source}{aes.\+h}} is the fully functional implementation of the AES algorithm, including ECB, CTR, and GCM modes, and supporting key sizes of 128, 192, and 256 bits. Its size may be daunting, so make sure to check out the Codebase Walkthrough to go over the various parts of each file, and functions of interest!
+\item Interested in learning about Diffie-\/\+Hellman? {\ttfamily \doxylink{exchange_8h_source}{exchange.\+h}} is our Diffie-\/\+Hellman implementation.
+\item Interested in creating an application that links to Open\+SSL? {\ttfamily \doxylink{hmac_8h_source}{hmac.\+h}} uses the Open\+SSL implementation of {\ttfamily HMAC-\/\+SHA256}!
+\item Interested in Network programming, and using Linux Sockets? {\ttfamily \doxylink{network_8h_source}{network.\+h}} holds all the functionality that the program uses to talk over the network, including sending and receiving arbitrary data.
+\item Want to better understand the inner working of the programs themselves? {\ttfamily main.\+cpp} contains the code for the {\ttfamily main} application, {\ttfamily \doxylink{prime_8h_source}{prime.\+h}} contains the functions related to prime-\/number generation and other mathematical functions, and {\ttfamily \doxylink{util_8h_source}{util.\+h}} contains helper functions for the {\ttfamily main} application, including the functionality for sending encrypted messages between the peers.
+\end{DoxyItemize}
+\end{DoxyItemize}
+
+\texorpdfstring{$>$}{>}\mbox{[}!note\mbox{]} \begin{quote}
+While the primary motivation of this repository is a well-\/documented AES and DH implementation, the entire code-\/base has received equally thorough documentation! \end{quote}
+
+\begin{DoxyItemize}
+\item Finally, if you want a higher-\/level understanding of the code base, but may not want to read raw C++ code, this repository has been documented with Doxygen, and as thus you have an interactive, HTML version of the codebase available in {\ttfamily docs/html}. Simply open the {\ttfamily index.\+html} with your favorite web browser, and navigate between the various namespaces and functions! 
+\end{DoxyItemize}\hypertarget{md_README_autotoc_md2}{}\doxysection{\texorpdfstring{Codebase Walkthrough}{Codebase Walkthrough}}\label{md_README_autotoc_md2}
+\begin{DoxyRemark}{Remarks}
+Reading source code be intimidating if you use a normal text editor like Notepad. There are many applications designed for developing/reading code, with features like folding and syntax highlighting. Notepad++ and Kate are excellent options!
+\end{DoxyRemark}
+This repository is written in {\ttfamily C++}. If you’re not familiar with the language, or Programming as a whole, the syntax may seem nebulous, but it’s been written to try and make the logic easy to follow. That said, here are some general points\+: \hypertarget{md_README_autotoc_md3}{}\doxysubsection{\texorpdfstring{Operations\+:}{Operations\+:}}\label{md_README_autotoc_md3}
+
+\begin{DoxyEnumerate}
+\item Standard mathematical operations include\+:
+\begin{DoxyEnumerate}
+\item Addition\+: {\ttfamily x + y}
+\item Subtraction\+: {\ttfamily x -\/ y}
+\item Multiplication\+: {\ttfamily x \texorpdfstring{$\ast$}{*} y}
+\item Division\+: {\ttfamily x / y} Note that because all values in this repository are integers—as opposed to floating point with decimals—division rounds down to the nearest whole number.
+\item Modulus {\ttfamily x \% y}, This returns the remainder of {\ttfamily x / y}
+\end{DoxyEnumerate}
+\item Bitwise/\+Logical operations include\+:
+\begin{DoxyEnumerate}
+\item AND\+: {\ttfamily x \& y}
+\item OR\+: {\ttfamily x \texorpdfstring{$\vert$}{|} y}
+\item XOR\+: {\ttfamily x \texorpdfstring{$^\wedge$}{\string^} y}
+\item NOT\+: {\ttfamily !x} 
+\end{DoxyEnumerate}
+\end{DoxyEnumerate}\hypertarget{md_README_autotoc_md4}{}\doxysubsection{\texorpdfstring{Fixed-\/\+Width Types}{Fixed-\/\+Width Types}}\label{md_README_autotoc_md4}
+Fixed width types\+: The {\ttfamily uint\+\_\+t} class of numbers are {\itshape fixed-\/width}, defined by the number of bits\+:
+\begin{DoxyEnumerate}
+\item {\ttfamily uint8\+\_\+t}\+: Is 8 bits, or a byte.
+\item {\ttfamily uint32\+\_\+t}\+: Is 32 bits, 4 bytes, or a word. 
+\end{DoxyEnumerate}\hypertarget{md_README_autotoc_md5}{}\doxysubsection{\texorpdfstring{Array Indexing}{Array Indexing}}\label{md_README_autotoc_md5}
+Array Indexing\+: AES uses a block of 16 bytes, typically organized as a 4x4 grid. While most implementations forgo this to simply have 16 bytes in a row, this implementation uses the 4x4 scheme to make it easier to follow. Indexing is done with the {\ttfamily \mbox{[}\mbox{]}} operator, so {\ttfamily array\mbox{[}x\mbox{]}\mbox{[}y\mbox{]}} would return the value located at column \$x\$, row \$y\$. \hypertarget{md_README_autotoc_md6}{}\doxysubsection{\texorpdfstring{Loops}{Loops}}\label{md_README_autotoc_md6}
+C++ has two main types of loops, {\ttfamily for} loops, and {\ttfamily while} loops\+: \hypertarget{md_README_autotoc_md7}{}\doxysubsubsection{\texorpdfstring{For Loops}{For Loops}}\label{md_README_autotoc_md7}
+{\ttfamily for (X; Y; Z)} will initialize the statement \$\+X\$, and continue to loop until \$\+Y\$ is no longer satisfied, calling statement \$\+Z\$ on each iteration. This is most commonly used in reference to indexing the block\+: 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\ ++}
+\DoxyCodeLine{\textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ row\ =\ 0;\ row\ <\ 4;\ ++row)\ \{}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ col\ =\ 0;\ col\ <\ 4;\ ++col)\ \{}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \ \ buffer[col][row]\ =\ array[(col\ -\/\ row)\ \%\ 4][row];}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\ \ \ \ \ \ \}}
+
+\end{DoxyCode}
+ Where {\ttfamily size\+\_\+t row = 0} and {\ttfamily size\+\_\+t col = 0} initialize the {\ttfamily row} and {\ttfamily col} index as {\ttfamily 0}, {\ttfamily row \texorpdfstring{$<$}{<} 4} and {\ttfamily col \texorpdfstring{$<$}{<} 4} ensure that the loop runs until these values iterate through the entire array, and {\ttfamily ++row} and {\ttfamily ++col} increment these values on each iteration.
+
+You’ll also see the C++ versions\+: 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\ ++}
+\DoxyCodeLine{\textcolor{keywordflow}{for}\ (\textcolor{keyword}{const}\ \textcolor{keyword}{auto}\&\ x\ :\ arrays)\ \{}
+\DoxyCodeLine{...}
+\DoxyCodeLine{\}}
+
+\end{DoxyCode}
+ This iterates through each element of {\ttfamily arrays}, setting the current element to the value {\ttfamily x}.\hypertarget{md_README_autotoc_md8}{}\doxysubsubsection{\texorpdfstring{While Loops}{While Loops}}\label{md_README_autotoc_md8}
+{\ttfamily while (X)} will repeatedly run until statement \$\+X\$ becomes false. Loops (both {\ttfamily for} and {\ttfamily while}) can jump back to the beginning using {\ttfamily continue}, or exit immediately with {\ttfamily break}\hypertarget{md_README_autotoc_md9}{}\doxysubsection{\texorpdfstring{The Standard Library}{The Standard Library}}\label{md_README_autotoc_md9}
+The standard library includes all functions and classes contained in the {\ttfamily std} namespace. This repository uses it extensively, such as the fixed-\/size collection of objects in the {\ttfamily std\+::array}, the variable sized collection of objects in the {\ttfamily std\+::vector}, and utilities like {\ttfamily std\+::rotl}.
+
+\texorpdfstring{$>$}{>}\mbox{[}!tip\mbox{]} \texorpdfstring{$>$}{>}The C++ Reference\+: \href{https://en.cppreference.com/w/cpp}{\texttt{ https\+://en.\+cppreference.\+com/w/cpp}} is a great source for documentation related to everything in the standard library!
+
+\begin{DoxyRemark}{Remarks}
+Want to learn C++? {\itshape Programming Principles and Practice Using C++} was written by its creator, and is a great resource! \href{https://www.amazon.com/dp/0138308683}{\texttt{ https\+://www.\+amazon.\+com/dp/0138308683}}
+\end{DoxyRemark}
+\hypertarget{md_README_autotoc_md10}{}\doxysubsection{\texorpdfstring{AES}{AES}}\label{md_README_autotoc_md10}
+\begin{DoxyNote}{Note}
+This AES implementation was made in reference to\+: \href{https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf}{\texttt{ https\+://nvlpubs.\+nist.\+gov/nistpubs/\+FIPS/\+NIST.\+FIPS.\+197-\/upd1.\+pdf}} Alongside\+: \href{https://cs.ru.nl/~joan/papers/JDA_VRI_Rijndael_2002.pdf}{\texttt{ https\+://cs.\+ru.\+nl/\texorpdfstring{$\sim$}{\string~}joan/papers/\+JDA\+\_\+\+VRI\+\_\+\+Rijndael\+\_\+2002.\+pdf}} Be sure to check them out if you want a more mathematically focused explanation of AES. ~\newline
+~\newline
+ The GCM implementation was made in reference to\+: \href{https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf}{\texttt{ https\+://nvlpubs.\+nist.\+gov/nistpubs/\+Legacy/\+SP/nistspecialpublication800-\/38d.\+pdf}}
+\end{DoxyNote}
+The AES implementation is available within the {\ttfamily \doxylink{aes_8h_source}{aes.\+h}}; as with every file in the repository, the functionality is partitioned into a {\itshape namespace}, namely the {\ttfamily aes} namespace. This is why other programs will call AES functionality like {\ttfamily aes\+::gcm\+::\+Enc}, where {\ttfamily Enc} is a function within the {\ttfamily gcm} namespace, which is within the {\ttfamily aes} namespace.
+
+AES operates by taking a message of arbitrary size, and breaking them down into 16 byte {\itshape Blocks}. These {\itshape Blocks} are collected into a single state. Then, a series of algorithms and transformations are applied to each {\itshape Block}, four in total\+: {\ttfamily Add\+Round\+Key}, {\ttfamily Sub\+Bytes}, {\ttfamily Shift\+Rows}, and {\ttfamily Mix\+Columns}. These four steps are then repeatedly applied depending on the size of the key, with \$10\$ rounds for a 128 bit key, \$12\$ for a 192 bit key, and \$14\$ for a 256 bit key. This key is transformed into a {\itshape Key Schedule} where the key is turned into a unique set of words for each round, and is then applied to the {\itshape Block} during the {\ttfamily Add\+Round\+Key} step.
+
+Once we have run through all the steps, we have the ciphertext. For ECB and CTR modes, we generate an HMAC against the ciphertext and key, producing a string that will change if the key or ciphertext is modified in transit, ensuring integrity. Because the key is used for HMAC generation, an attacker cannot modify the ciphertext {\itshape and} create a corresponding HMAC! GCM creates its own integrity check that is stored as a {\itshape Block} at the end of the ciphertext.
+
+The {\ttfamily aes} namespace includes the following members\+:
+\begin{DoxyItemize}
+\item The {\ttfamily gf} namespace contains functions related to Galois Field computation, used frequently in both AES and AES-\/\+GCM.
+\item The {\ttfamily key} namespace contains functions related to the {\ttfamily Key\+Expansion} algorithm in AES, which is used by the {\ttfamily Add\+Round\+Key} step in AES.
+\item The {\ttfamily state\+\_\+array} class is the basic unit of AES, containing the {\itshape Block}. Every step of AES applies to the {\itshape Block}, and is thus implemented within this class as member functions. Importantly there is\+:
+\begin{DoxyItemize}
+\item {\ttfamily state\+\_\+array\+::\+Add\+Round\+Key}\+: Add the round key.
+\item {\ttfamily state\+\_\+array\+::\+Sub\+Bytes}\+: Perform the substitution step.
+\item {\ttfamily state\+\_\+array\+::\+Inv\+Sub\+Bytes}\+: Revert {\ttfamily Sub\+Bytes}
+\item {\ttfamily state\+\_\+array\+::\+Shift\+Rows}\+: Transpose the rows by a cyclical shift.
+\item {\ttfamily state\+\_\+array\+::\+Inv\+Shift\+Rows}\+: Revert {\ttfamily Shift\+Rows}
+\item {\ttfamily state\+\_\+array\+::\+Mix\+Columns}\+: Transform each column by a matrix.
+\item {\ttfamily state\+\_\+array\+::\+Inv\+Mix\+Columns}\+: Revert {\ttfamily Mix\+Columns}
+\item The {\ttfamily state\+\_\+array} is transformed in place, which means it is initially filled with plaintext, and each of these above steps are applied, changing the internal values, before the final ciphertext is unraveled out as a string.
+\end{DoxyItemize}
+\item The {\ttfamily state} is little more than a collection of individual {\ttfamily state\+\_\+arrays}. Because {\itshape Blocks} are fixed at 16 bytes, the {\ttfamily state} contains an entire message broken into these 16 byte segments. It is responsible for generating the Key Schedule (See {\ttfamily state\+::\+Schedule}), but besides that does nothing more than apply all of the steps mentioned in the {\ttfamily state\+\_\+array} to each {\itshape Block}.
+\item The {\ttfamily Cipher} and {\ttfamily Inv\+Cipher} functions are a verbatim translation of the Encryption and Decryption outlined in the Reference paper. Taking a string, a key, and a round number, it encrypts the message with AES, returning the resulting cipher text. Using these functions by themselves is using AES in ECB mode.
+\item The {\ttfamily Ctr} function is a implementation of the AES-\/\+CTR mode, where rather than passing the plaintext through AES directly, we instead generate a nonce value, pass that through AES to get a {\itshape Pad}, and then perform a One-\/\+Time Pad form of encryption where the plaintext is XOR’d against this {\itshape Pad}, to which a unique pad is generated for each {\itshape Block} in the plaintext by the incrementing nonce. Because encryption is done via XOR, {\ttfamily Ctr} both encrypts and decrypts a message.
+\item The {\ttfamily gcm} namespace includes all the functions related to the AES-\/\+GCM mode. These functions were implemented in reference to\+: \href{https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf}{\texttt{ https\+://nvlpubs.\+nist.\+gov/nistpubs/\+Legacy/\+SP/nistspecialpublication800-\/38d.\+pdf}}
+\begin{DoxyItemize}
+\item The {\ttfamily increment} function increments the Nonce value; unlike AES-\/\+CTR, the nonce has a specific algorithm for incrementing it to the next value.
+\item The {\ttfamily mult} function multiplies two {\itshape Blocks} together.
+\item The {\ttfamily GHASH} function is the main aspect of AES-\/\+GCM, and generates an authenticated hash of the state, returning it in a {\itshape Block} that can be appended onto the state.
+\item The {\ttfamily GCTR} function is almost identical to {\ttfamily \doxylink{namespaceaes_aa0147bc1291533ed0066f04b9ded820d}{aes\+::\+Ctr}}, but rather than taking a numerical nonce, it uses a {\itshape Block} nonce/\+IV called {\ttfamily ICB}. It also uses {\ttfamily \doxylink{namespaceaes_1_1gcm_ad32f2adca6691ec845600d8fa98c5bc3}{aes\+::gcm\+::increment}} To step the {\ttfamily ICB} to new values, and rather than returning a string message, returns the block state instead.
+\item The {\ttfamily Enc} function takes a message, a key, a round count, and nonce, and encrypts the message with AES-\/\+GCM.
+\item The {\ttfamily Dec} function takes a ciphertext, a key, a round count, and a nonce, and will decrypt the message with AES-\/\+GCM if and only if the {\ttfamily GHASH} matches, and will refuse to decrypt if there have been changes to the key or any blocks.
+\end{DoxyItemize}
+\end{DoxyItemize}
+
+\begin{DoxyNote}{Note}
+You’ll find many auxiliary functions in the {\ttfamily state\+\_\+array}, and other classes. They aren’t important to the fundamental understanding of AES, so feel free to ignore them if they aren’t mentioned here.
+\end{DoxyNote}
+\hypertarget{md_README_autotoc_md11}{}\doxysubsection{\texorpdfstring{Exchange}{Exchange}}\label{md_README_autotoc_md11}
+\begin{DoxyNote}{Note}
+This implementation was made in reference to\+: \href{https://datatracker.ietf.org/doc/html/rfc2631\#section-2.1}{\texttt{ https\+://datatracker.\+ietf.\+org/doc/html/rfc2631\#section-\/2.\+1}}
+\end{DoxyNote}
+Diffie-\/\+Hellman is particularly clever because it relies on the associativity of multiplication. The basic steps are this\+:
+\begin{DoxyItemize}
+\item Alice and Bob generate two secret values \$a\$ and \$b\$.
+\item Alice and Bob agree upon two public values.
+\begin{DoxyItemize}
+\item A prime number \$p\$ that is used as modulus.
+\item A value \$g\$, such that it is a {\itshape primitive root} of \$p\$. This means that raising \$g\$ from every value between \$1\$ and \$p-\/1\$ will lead to a unique mapping of values that includes every value between \$1\$ to \$p-\/1\$. This ensures no private key \$a,b\$ when raised to \$g\$, has a corresponding value \$a’,b’\$ that would return the same value.
+\end{DoxyItemize}
+\item Alice takes her private key, and raises \$g\$ by it and mods by \$p\$\+: \$A = g\texorpdfstring{$^\wedge$}{\string^}a \textbackslash{}mod p\$ This constitutes her {\itshape intermediary}, which is then sent to Bob.
+\item Bob, likewise, raises his private key\+: \$B = g\texorpdfstring{$^\wedge$}{\string^}b \textbackslash{}mod p\$ and sends it to Alice.
+\item Now, each peer raises this intermediary by their own private key\+:
+\begin{DoxyItemize}
+\item Alice\+: \$B\texorpdfstring{$^\wedge$}{\string^}a = (g\texorpdfstring{$^\wedge$}{\string^}b)\texorpdfstring{$^\wedge$}{\string^}a = g\texorpdfstring{$^\wedge$}{\string^}\{b \textbackslash{}times a\} \textbackslash{}mod p\$
+\item Bob\+: \$A\texorpdfstring{$^\wedge$}{\string^}b = (g\texorpdfstring{$^\wedge$}{\string^}a)\texorpdfstring{$^\wedge$}{\string^}b = g\texorpdfstring{$^\wedge$}{\string^}\{a \textbackslash{}times b\} = g\texorpdfstring{$^\wedge$}{\string^}\{b \textbackslash{}times a\} \textbackslash{}mod p\$
+\item Therefore, then they reach the same {\itshape Shared Key}, which can be used for communication, without sending any private values across the network.
+\end{DoxyItemize}
+\end{DoxyItemize}
+
+Diffie-\/\+Hellman relies on a the idea that, with large enough values \$p,a,b\$, trying to manually determine values \$a,b\$ from only knowing \$g\texorpdfstring{$^\wedge$}{\string^}a \textbackslash{}mod p, g\texorpdfstring{$^\wedge$}{\string^}b \textbackslash{}mod p\$ is infeasible. For more information\+: see \href{https://en.wikipedia.org/wiki/Discrete_logarithm}{\texttt{ https\+://en.\+wikipedia.\+org/wiki/\+Discrete\+\_\+logarithm}}
+
+The Diffie-\/\+Hellman Key Exchange implementation is located in {\ttfamily \doxylink{exchange_8h_source}{exchange.\+h}}, within the {\ttfamily exchange} namespace. Unlike {\ttfamily aes}, there isn’t near as many members\+:
+\begin{DoxyItemize}
+\item The {\ttfamily compute\+\_\+intermediary} function takes the public values \$p\$ and \$g\$, alongside a private key \$k\$ and computes the intermediary value that is sent to the other peer.
+\item The {\ttfamily exchange\+\_\+keys} function generates the private and public keys, and establishes a shared key between another computer by communicating over a socket.
+\end{DoxyItemize}
+
+\texorpdfstring{$>$}{>}\mbox{[}!note\mbox{]} \texorpdfstring{$>$}{>}While the primary Diffie-\/\+Hellman algorithm is implemented as {\ttfamily exchange\+\_\+keys}, This implementation uses 64 bit keys, which is unacceptable for use within AES. Therefore, the {\ttfamily main} program actually exchanges 4 keys, totaling 256 bits. Take a look at {\ttfamily \doxylink{namespaceutil_a0b2991073e807f963358270921c4e6f0}{util\+::construct\+\_\+shared\+\_\+key}} for the code!\hypertarget{md_README_autotoc_md12}{}\doxysection{\texorpdfstring{Application Walkthrough}{Application Walkthrough}}\label{md_README_autotoc_md12}
+Interesting in seeing AES and DH in action? This project compiles two applications that you can use to see the implementations working\+: {\ttfamily aes} and {\ttfamily main}\hypertarget{md_README_autotoc_md13}{}\doxysubsection{\texorpdfstring{{\ttfamily aes}}{{\ttfamily aes}}}\label{md_README_autotoc_md13}
+{\ttfamily aes} is the simpler of the two, simply providing a command line utility interfacing with our AES implementation. Simply run {\ttfamily ./aes} from the project directory in your shell of choices!
+
+\begin{DoxyWarning}{Warning}
+{\ttfamily aes} only supports long-\/style command line flags, such as {\ttfamily -\/-\/flag1=value1 -\/-\/flag2=value2}. Values must be separated by an {\ttfamily =}, with no white space between
+\end{DoxyWarning}
+The only required argument is {\ttfamily -\/-\/mode}, which specifies which mode of AES to use. This is represented as three values separated by dashes, in the format {\ttfamily ENC-\/256-\/\+GCM} where\+:
+\begin{DoxyItemize}
+\item {\ttfamily ENC/\+DEC} is the first string, specifying whether this is an encryption or decryption operation.
+\item {\ttfamily 128/192/256} is the second string, specifying the key size.
+\item {\ttfamily ECB/\+CTR/\+GCM} is the final string, specifying the specific AES method to use.
+\end{DoxyItemize}
+
+{\ttfamily ./aes -\/-\/help} will list all the available options, but here are the important ones\+:
+\begin{DoxyItemize}
+\item {\ttfamily -\/-\/infile} specifies the source of data. If not provided, the user will be prompted to supply a message.
+\item {\ttfamily -\/-\/outfile} specifies where the output data should be send. If not provided, the output will be output to the console.
+\item {\ttfamily -\/-\/keyfile} specifies a file used for the key. If not provided, the user will be prompted to supply a key.
+\end{DoxyItemize}
+
+Some examples\+: 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\#\ Type\ in\ a\ message\ and\ key,\ encrypt\ with\ AES-\/256-\/GCM,\ and\ write\ the\ output\ to\ /out.bin}
+\DoxyCodeLine{aes\ -\/-\/mode=ENC-\/256-\/GCM\ -\/-\/outfile=/out.bin\ }
+\DoxyCodeLine{}
+\DoxyCodeLine{\#\ Decrypt\ that\ file,\ asking\ the\ user\ for\ the\ key,\ and\ writing\ to\ the\ console.}
+\DoxyCodeLine{aes\ -\/-\/mode=DEC-\/256-\/GCM\ -\/-\/infile=/out.bin\ }
+\DoxyCodeLine{}
+\DoxyCodeLine{\#\ Encrypt\ myfile.txt\ with\ key\ entered\ in\ the\ console,\ output\ the\ ciphertext\ onto\ the\ console\ }
+\DoxyCodeLine{aes\ -\/-\/mode=ENC-\/128-\/ECB\ -\/-\/infile=/myfile.txt}
+\DoxyCodeLine{}
+\DoxyCodeLine{\#\ Encrypt\ a\ typed\ in\ message\ using\ mykey.txt\ as\ a\ key,\ writing\ to\ the\ console.}
+\DoxyCodeLine{aes\ -\/-\/mode=ENC-\/192-\/CTR\ -\/-\/keyfile=/mykey.txt\ }
+
+\end{DoxyCode}
+
+
+\texorpdfstring{$>$}{>}\mbox{[}!tip\mbox{]} \texorpdfstring{$>$}{>}ECB/\+CTR modes do not have any authenticity checks when running from the {\ttfamily aes} program, as no HMAC is generated. However, since GCM does have integrity, try encrypting data to a file, then change part of that file before asking to decrypt. GCM will immediately report the modification was detected and refuse to decrypt! You can also try this with keys\+: ECB/\+CTR will return garbage data if an incorrect key is provided, but GCM will refuse to decrypt altogether!\hypertarget{md_README_autotoc_md14}{}\doxysubsection{\texorpdfstring{{\ttfamily main}}{{\ttfamily main}}}\label{md_README_autotoc_md14}
+{\ttfamily main} provides an interface for two peers to communicate over a socket, exchange a shared key using Diffie-\/\+Hellman, and then use those shared keys to securely send messages with AES encryption. No command line arguments are required, simply run from your shell!
+
+When first starting, {\ttfamily main} performs a sanity check to ensure that the AES implementation is working correctly. You should see three sentences, each with an AES mode at the end. If these sentences look incorrect (incoherent text, characters that cannot be rendered), then there’s something wrong with the program. If you’re using the pre-\/compiled version ({\ttfamily main\+\_\+pre}), try compiling it yourself, vice versa if you’re using a self-\/compiled version. If everything looks alright, press enter, if not\+: {\ttfamily Ctrl+C} to stop the program.
+
+Once past that, you will be at the main interface of the program\+: 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{Status:\ IDLE\ \ }
+\DoxyCodeLine{What\ would\ you\ like\ to\ do?\ \ }
+\DoxyCodeLine{0:\ Request\ New\ Connection\ \ }
+\DoxyCodeLine{1:\ Listen\ for\ New\ Connection\ \ }
+\DoxyCodeLine{2:\ Quit}
+
+\end{DoxyCode}
+
+
+
+\begin{DoxyItemize}
+\item {\ttfamily Status}\+: Specifies the state of program. If you are connected to another peer, it will be {\ttfamily CONNECTED}, otherwise it will be {\ttfamily IDLE}. This determines what options you have available.
+\item {\ttfamily 0. Request New Connection} Will allow you to connect to another peer who has selected {\ttfamily Listen for a New Connection}. {\ttfamily main} uses a numerical list for users to provide input. To select this option, type {\ttfamily 0}, and then {\ttfamily ENTER}. ~\newline
+
+\item {\ttfamily 1. Listen for New Connection} listens for peers to connect to.
+\item {\ttfamily 2. Quit} will close the application.
+\end{DoxyItemize}
+
+The networking model of {\ttfamily main} is a two-\/way communication of a shared socket. On an initial connection, however, one peer will need to be be the {\itshape server}, selecting {\ttfamily Listen for a New Connection}, and the other will be the {\itshape client}, selected {\ttfamily Request New Connection}. When listening, you provide a port to listen on, and the program will wait 30 seconds for another peer to connect. When requesting, you will provide that same port, and the IP Address of the second computer.
+
+\begin{DoxyRemark}{Remarks}
+{\ttfamily main} does not perform DNS lookup, so you need to provide the raw IP address of the listening peer. If you aren’t sure what that is, use {\ttfamily ping}! Make sure your firewall allows communication to the port you’ve picked!
+
+If you’re running two instances of the program on a single computer, provide either the localhost address ({\ttfamily 127.\+0.\+0.\+1}), or just type {\ttfamily local}!
+\end{DoxyRemark}
+\begin{DoxyNote}{Note}
+The {\itshape server}/\texorpdfstring{$\ast$}{*}client\texorpdfstring{$\ast$}{*} relationship only applies to the initial communication; once a connection has been established, both peers will be able to freely send and receive messages!
+\end{DoxyNote}
+\begin{DoxyWarning}{Warning}
+The {\itshape client} will fail the connection if the {\itshape server} isn’t in listening mode. Listen with the {\itshape server} first, then connect with the {\itshape client}!
+
+Some ports are reserved by the system. Some ports may already be in use by other applications. If {\ttfamily main} reports {\ttfamily Failed to connect!} try using a high port like {\ttfamily 2000}, and incrementing by one until you find a free port to bind to!
+\end{DoxyWarning}
+For an example, we’ll launch two instances of {\ttfamily main} on a single computer, and will use port {\ttfamily 5000} to listen to. We should see the program report {\ttfamily Listening...} where we have 30 seconds to connect. Don’t worry if you don’t connect in time, you can just {\ttfamily Listen for New Connection} again, and it’ll even remember the port!
+
+With the second program, we’ll provide port {\ttfamily 5000}, and then {\ttfamily local} because these are both running on the same computer. You should immediately see the program report {\ttfamily Exchaging Keys...}, and then {\ttfamily Complete!} The two peers just used Diffie-\/\+Hellman to exchange a shared key! If you see an error, you’ll be brought back to the home page, and you can try to connect again.
+
+Now, you should be brought back to the home page, but the status should report {\ttfamily CONNECTED}. Now, you have some new options\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{Status:\ CONNECTED\ \ }
+\DoxyCodeLine{What\ would\ you\ like\ to\ do?\ \ }
+\DoxyCodeLine{Shared\ Key\ (Mod\ 100):\ 36682272\ \ }
+\DoxyCodeLine{0:\ Listen\ for\ Request\ \ }
+\DoxyCodeLine{1:\ Send\ an\ Encrypted\ Message\ \ }
+\DoxyCodeLine{2:\ Re-\/Exchange\ Keys\ \ }
+\DoxyCodeLine{3:\ Terminate\ Connection\ \ }
+\DoxyCodeLine{4:\ Quit}
+
+\end{DoxyCode}
+
+
+
+\begin{DoxyItemize}
+\item The {\ttfamily Shared Key} provides you a truncated version of the shared key that was negotiated. Sometimes, a blip in the network communication can lead to values being dropped or changed in transit. If this happens during the key exchange, you won’t be able to communicate. Therefore, look at the value, and ensure that they are identical between both peers.
+\item {\ttfamily 0. Listen for Request}\+: The networking between peers is simplistic, which means that communication is done in a similar way to the initial handshake. One peer will Listen for Requests, which will put the program in an idle state for 30 seconds as it awaits a request from the other peer. In this time, the other peer will use one of the other options.
+\item {\ttfamily 1. Send an Encrypted Message}\+: Use AES to send an encrypted message using the shared key to the other peer. More details on this below.
+\item {\ttfamily 2. Re-\/\+Exchange Keys}\+: If the shared keys do not match, request that new shared keys be generated and shared.
+\item {\ttfamily 3. Terminate Connection}\+: Terminate your connection with the peer.
+\end{DoxyItemize}
+
+\begin{DoxyWarning}{Warning}
+If the shared keys do not match, then the Encryption/\+Decryption process will return garbage data!
+\end{DoxyWarning}
+So, if our shared keys don’t match, and we need to re-\/exchange new values, peer 1 will type {\ttfamily 0} to {\ttfamily Listen for Request}, and peer 2 will type {\ttfamily 2} to {\ttfamily Re-\/\+Exchange Keys}. Peer 1 will be prompted to accept the exchange, and if they accept a new key-\/exchange will be performed.
+
+To send an encrypted message, Peer 1 will type {\ttfamily 0} to Listen, and peer 2 will type {\ttfamily 1} to send an encrypted message. As with the initial connection, Listening has a 30 second timeout, but if you timeout the first peer setting up the message, you can just listen again!
+
+For peer 2, you will firstly need to provide a message. This can be of any size, but ends with a newline, or the enter key. Next, you’ll have to provide the key size, which can either be 128/192/256. Finally, select which AES mode to use, either ECB/\+CTR/\+GCM. Peer 2 will then wait for Peer 1, and once the peer has accepted, will send the ciphertext over. Peer 1 can then decrypt it with the shared key, and the program will print out the Message. Have fun!
+
+\begin{DoxyNote}{Note}
+CTR and GCM modes will send the Nonce across the wire as well CTR and ECB modes will send an HMAC for integrity! GCM manages integrity itself.
+\end{DoxyNote}
+\begin{DoxyRemark}{Remarks}
+If you run into issues, such as communications immediately failing, simply exit the program, either through the {\ttfamily Quit} option or with {\ttfamily CTRL+C}, and relaunch the program to try again! 
+\end{DoxyRemark}

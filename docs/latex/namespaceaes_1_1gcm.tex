@@ -1,0 +1,158 @@
+\doxysection{aes\+::gcm Namespace Reference}
+\hypertarget{namespaceaes_1_1gcm}{}\label{namespaceaes_1_1gcm}\index{aes::gcm@{aes::gcm}}
+
+
+Functions related to AES-\/\+GCM.  
+
+
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{namespaceaes_1_1gcm_ad32f2adca6691ec845600d8fa98c5bc3}{increment}} (\mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}} \&X)
+\begin{DoxyCompactList}\small\item\em The Nonce Increment Function. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}} \mbox{\hyperlink{namespaceaes_1_1gcm_ab95f2c83cf8f0c6a3a9bb4565d561a30}{mult}} (const \mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}} \&X, const \mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}} \&Y)
+\begin{DoxyCompactList}\small\item\em Perform a multiplication on two blocks of data. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}} \mbox{\hyperlink{namespaceaes_1_1gcm_aef9e152fad1ad6c97e90db2364ad5886}{GHASH}} (const \mbox{\hyperlink{classaes_1_1state}{state}} \&X, const \mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}} \&H)
+\begin{DoxyCompactList}\small\item\em Calculate the GHASH for a state. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classaes_1_1state}{state}} \mbox{\hyperlink{namespaceaes_1_1gcm_a3dbcc886156cfc4f185cf64e9d43615d}{GCTR}} (\mbox{\hyperlink{classaes_1_1state}{state}} s, \mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}} ICB)
+\begin{DoxyCompactList}\small\item\em Apply AES-\/\+CTR to a message. \end{DoxyCompactList}\item 
+\Hypertarget{namespaceaes_1_1gcm_a94d9147b42c887164f3c3a21ab9c0c0b}\label{namespaceaes_1_1gcm_a94d9147b42c887164f3c3a21ab9c0c0b} 
+std\+::string {\bfseries Enc} (const std\+::string \&in, const std\+::array$<$ uint64\+\_\+t, 4 $>$ \&k, const uint64\+\_\+t Nr, uint64\+\_\+t nonce)
+\item 
+std\+::string \mbox{\hyperlink{namespaceaes_1_1gcm_a88e45ea3280e56ca586a8fbe6bbd1d88}{Dec}} (const std\+::string \&in, const std\+::array$<$ uint64\+\_\+t, 4 $>$ \&k, const uint64\+\_\+t Nr, uint64\+\_\+t nonce)
+\begin{DoxyCompactList}\small\item\em Decrypt a message with AES-\/\+GCM. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Functions related to AES-\/\+GCM. 
+
+\begin{DoxyRemark}{Remarks}
+These functions have been created in reference to\+: \href{https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf}{\texttt{ https\+://nvlpubs.\+nist.\+gov/nistpubs/\+Legacy/\+SP/nistspecialpublication800-\/38d.\+pdf}} Herein referred to as "{}\+The Reference"{} (The AES reference is not Used here). 
+\end{DoxyRemark}
+
+
+\doxysubsection{Function Documentation}
+\Hypertarget{namespaceaes_1_1gcm_a88e45ea3280e56ca586a8fbe6bbd1d88}\index{aes::gcm@{aes::gcm}!Dec@{Dec}}
+\index{Dec@{Dec}!aes::gcm@{aes::gcm}}
+\doxysubsubsection{\texorpdfstring{Dec()}{Dec()}}
+{\footnotesize\ttfamily \label{namespaceaes_1_1gcm_a88e45ea3280e56ca586a8fbe6bbd1d88} 
+std\+::string aes\+::gcm\+::\+Dec (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{in}{, }\item[{const std\+::array$<$ uint64\+\_\+t, 4 $>$ \&}]{k}{, }\item[{const uint64\+\_\+t}]{Nr}{, }\item[{uint64\+\_\+t}]{nonce}{}\end{DoxyParamCaption})}
+
+
+
+Decrypt a message with AES-\/\+GCM. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em in} & The ciphertext. \\
+\hline
+{\em k} & The key. \\
+\hline
+{\em Nr} & The number of rounds to perform. \\
+\hline
+{\em nonce} & The nonce value/\+IV. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The plaintext message. 
+\end{DoxyReturn}
+
+\begin{DoxyExceptions}{Exceptions}
+{\em std\+::runtime\+\_\+error} & if the message has been modified or an incorrect key was supplied. \\
+\hline
+\end{DoxyExceptions}
+\Hypertarget{namespaceaes_1_1gcm_a3dbcc886156cfc4f185cf64e9d43615d}\index{aes::gcm@{aes::gcm}!GCTR@{GCTR}}
+\index{GCTR@{GCTR}!aes::gcm@{aes::gcm}}
+\doxysubsubsection{\texorpdfstring{GCTR()}{GCTR()}}
+{\footnotesize\ttfamily \label{namespaceaes_1_1gcm_a3dbcc886156cfc4f185cf64e9d43615d} 
+\mbox{\hyperlink{classaes_1_1state}{state}} aes\+::gcm\+::\+GCTR (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classaes_1_1state}{state}}}]{s}{, }\item[{\mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}}}]{ICB}{}\end{DoxyParamCaption})}
+
+
+
+Apply AES-\/\+CTR to a message. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em s} & The state to operate on. \\
+\hline
+{\em ICB} & The initial vector, or nonce. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The encrypted/decrypted state. 
+\end{DoxyReturn}
+\begin{DoxyRemark}{Remarks}
+See 6.\+5 of the Reference, and Figure 2. 
+
+As the name suggests, this is pretty much identical to AES-\/\+CTR, Specifically the Ctr function in This file. The only difference is that our nonce is a \doxylink{classaes_1_1state__array}{state\+\_\+array}, instead of a number (Which isn\textquotesingle{}t specific To GCM or CTR, but is just how we implemented it in this case), we increment by a special function, rather than just adding one, and we return the state, rather than the unravelled string, so that we can compute the GHASH. 
+\end{DoxyRemark}
+\Hypertarget{namespaceaes_1_1gcm_aef9e152fad1ad6c97e90db2364ad5886}\index{aes::gcm@{aes::gcm}!GHASH@{GHASH}}
+\index{GHASH@{GHASH}!aes::gcm@{aes::gcm}}
+\doxysubsubsection{\texorpdfstring{GHASH()}{GHASH()}}
+{\footnotesize\ttfamily \label{namespaceaes_1_1gcm_aef9e152fad1ad6c97e90db2364ad5886} 
+\mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}} aes\+::gcm\+::\+GHASH (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{classaes_1_1state}{state}} \&}]{X}{, }\item[{const \mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}} \&}]{H}{}\end{DoxyParamCaption})}
+
+
+
+Calculate the GHASH for a state. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em X} & The state \\
+\hline
+{\em H} & The hash subkey. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The hash block. 
+\end{DoxyReturn}
+\begin{DoxyRemark}{Remarks}
+See 6.\+4 of the Reference. 
+
+This function operates almost identically to a MAC, like HMAC-\/\+SHA256 (Hence the name). Basically we set an initial generation of Y, and then Update that value for every block in the state. We do this with a fast XOR, And then apply our multiplication on the hash subkey. Since the hash subkey Is derived from the key and nonce, this is essentially the key in an HMAC, And the state is the data that runs through the hashing algorithm. By The end of the iteration, we have a block that has been influenced by not only the key, but every block in the state, hence arriving at a hash that, if the key or any block has been modified, will not match. Since it\textquotesingle{}s also a \doxylink{classaes_1_1state__array}{state\+\_\+array} itself, We can trivially append it to the end of the state, and unravel the entire thing Without needing to send an explicit HMAC value across. 
+\end{DoxyRemark}
+\Hypertarget{namespaceaes_1_1gcm_ad32f2adca6691ec845600d8fa98c5bc3}\index{aes::gcm@{aes::gcm}!increment@{increment}}
+\index{increment@{increment}!aes::gcm@{aes::gcm}}
+\doxysubsubsection{\texorpdfstring{increment()}{increment()}}
+{\footnotesize\ttfamily \label{namespaceaes_1_1gcm_ad32f2adca6691ec845600d8fa98c5bc3} 
+void aes\+::gcm\+::increment (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}} \&}]{X}{}\end{DoxyParamCaption})}
+
+
+
+The Nonce Increment Function. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em the} & state array used as the counter. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyRemark}{Remarks}
+GCM uses a "{}more sophisticated"{} means of stepping the Counter that is passed to AES with the Key to generate the Pad. 
+
+See 6.\+2 of the Reference. 
+
+I couldn\textquotesingle{}t find a reason for why the increment is performed This way. By only incrementing the first four bytes, it technically limits the size of the message to 4294967296 blocks, and we then repeat A nonce, which would be disaterous. That value is equal to 64GB. My best Guess is that a more performant implementation (One that wouldn\textquotesingle{}t need to deconstruct the last four bytes into a new number), would be able to just cast The last bits, treat it like the very fast uint32\+\_\+t directly, and increment it with instructions that are blazingly fast with this datatype (int defaults to 32bit specifically because it\textquotesingle{}s fast, even faster than the native register size of 64bit. You can see this by using uint\+\_\+fast32\+\_\+t, which C++ mandates as an integer at least 32 bits, but can be faster if performance will improve (See \href{https://en.cppreference.com/w/cpp/types/integer}{\texttt{ https\+://en.\+cppreference.\+com/w/cpp/types/integer}}). Yet, on every computer I\textquotesingle{}ve personally used, it will always be a 32 bit value, not a 64 bit, which is neat). 
+\end{DoxyRemark}
+\Hypertarget{namespaceaes_1_1gcm_ab95f2c83cf8f0c6a3a9bb4565d561a30}\index{aes::gcm@{aes::gcm}!mult@{mult}}
+\index{mult@{mult}!aes::gcm@{aes::gcm}}
+\doxysubsubsection{\texorpdfstring{mult()}{mult()}}
+{\footnotesize\ttfamily \label{namespaceaes_1_1gcm_ab95f2c83cf8f0c6a3a9bb4565d561a30} 
+\mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}} aes\+::gcm\+::mult (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}} \&}]{X}{, }\item[{const \mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}} \&}]{Y}{}\end{DoxyParamCaption})}
+
+
+
+Perform a multiplication on two blocks of data. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em X} & The first block. \\
+\hline
+{\em Y} & The second block. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+\+: The resultant block. 
+\end{DoxyReturn}
+\begin{DoxyRemark}{Remarks}
+See 6.\+3 of the Reference. 
+\end{DoxyRemark}

@@ -1,0 +1,272 @@
+\doxysection{network Namespace Reference}
+\hypertarget{namespacenetwork}{}\label{namespacenetwork}\index{network@{network}}
+
+
+The namespace for communication along a socket.  
+
+
+\doxysubsubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structnetwork_1_1packet}{packet}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Enumerations}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{namespacenetwork_a89b246c9e7382ab8863f647ab1bbb92b}\label{namespacenetwork_a89b246c9e7382ab8863f647ab1bbb92b} 
+enum {\bfseries meta} \{ \newline
+{\bfseries ERROR}
+, {\bfseries EMPTY}
+, {\bfseries DATA}
+, {\bfseries HMAC}
+, \newline
+{\bfseries NONCE}
+, {\bfseries IV}
+, {\bfseries FINAL}
+, {\bfseries MESSAGE}
+, \newline
+{\bfseries ACK}
+, {\bfseries REFUSED}
+, {\bfseries REEXCHANGE}
+ \}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{namespacenetwork_a3812b264b0c3850ea556cc0dc4e337ca}{send\+\_\+packet}} (const \mbox{\hyperlink{structnetwork_1_1packet}{packet}} \&p, const size\+\_\+t \&timeout=5)
+\begin{DoxyCompactList}\small\item\em Send a packet. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structnetwork_1_1packet}{packet}} \mbox{\hyperlink{namespacenetwork_af0880c416ff05d41d94d9421d45a50ef}{recv\+\_\+packet}} (const size\+\_\+t \&timeout=5)
+\begin{DoxyCompactList}\small\item\em Receive a packet. \end{DoxyCompactList}\item 
+{\footnotesize template$<$typename T $>$ }\\int \mbox{\hyperlink{namespacenetwork_a8ce2596c5463ea3c6ddbdda72ae810f4}{send\+\_\+value}} (const T \&value, const network\+::meta \&type=DATA, const size\+\_\+t \&timeout=5)
+\begin{DoxyCompactList}\small\item\em Send a value. \end{DoxyCompactList}\item 
+{\footnotesize template$<$typename T $>$ }\\const T \mbox{\hyperlink{namespacenetwork_aece659d7f6b65d51b84c73a53c30f468}{recv\+\_\+value}} (const size\+\_\+t \&timeout=5)
+\begin{DoxyCompactList}\small\item\em Receive a value. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{namespacenetwork_ae1bd80403173048a0fc3cca5666a5c2a}{send\+\_\+string}} (const std\+::string \&message, const network\+::meta \&type=DATA, const size\+\_\+t \&timeout=5)
+\begin{DoxyCompactList}\small\item\em Send a string of any size. \end{DoxyCompactList}\item 
+std\+::string \mbox{\hyperlink{namespacenetwork_a478e5696c416be715995595225c723d1}{recv\+\_\+string}} (const size\+\_\+t \&timeout=5)
+\begin{DoxyCompactList}\small\item\em Receive a string. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{namespacenetwork_af77a91822020a80e7f864892a47a09d3}{get\+\_\+client}} (const int \&port)
+\begin{DoxyCompactList}\small\item\em Listen on the socket for a client to initiate a connection. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{namespacenetwork_af5cfd1ae6f77a7f0f24e88f82ef4dc12}{get\+\_\+server}} (const size\+\_\+t \&port, const char address\mbox{[}$\,$\mbox{]}="{}127.\+0.\+0.\+1"{})
+\begin{DoxyCompactList}\small\item\em Try and connect to the server. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08}{sock}} = -\/1
+\begin{DoxyCompactList}\small\item\em The FD sock for when the program is in Listen mode. \end{DoxyCompactList}\item 
+\Hypertarget{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}\label{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f} 
+int {\bfseries connection} = -\/1
+\begin{DoxyCompactList}\small\item\em the FD sock that peers communicate over. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The namespace for communication along a socket. 
+
+\doxysubsection{Function Documentation}
+\Hypertarget{namespacenetwork_af77a91822020a80e7f864892a47a09d3}\index{network@{network}!get\_client@{get\_client}}
+\index{get\_client@{get\_client}!network@{network}}
+\doxysubsubsection{\texorpdfstring{get\_client()}{get\_client()}}
+{\footnotesize\ttfamily \label{namespacenetwork_af77a91822020a80e7f864892a47a09d3} 
+void network\+::get\+\_\+client (\begin{DoxyParamCaption}\item[{const int \&}]{port}{}\end{DoxyParamCaption})}
+
+
+
+Listen on the socket for a client to initiate a connection. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em port} & The port to listen on. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyWarning}{Warning}
+This function will initialize network\+::out; be sure to close it before closing the application. 
+
+This function will initialize \doxylink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{network\+::connection}; be sure to close it before closing the application. 
+
+You are responsible for closing sockets. 
+\end{DoxyWarning}
+\Hypertarget{namespacenetwork_af5cfd1ae6f77a7f0f24e88f82ef4dc12}\index{network@{network}!get\_server@{get\_server}}
+\index{get\_server@{get\_server}!network@{network}}
+\doxysubsubsection{\texorpdfstring{get\_server()}{get\_server()}}
+{\footnotesize\ttfamily \label{namespacenetwork_af5cfd1ae6f77a7f0f24e88f82ef4dc12} 
+void network\+::get\+\_\+server (\begin{DoxyParamCaption}\item[{const size\+\_\+t \&}]{port}{, }\item[{const char}]{address}{\mbox{[}$\,$\mbox{]} = {\ttfamily "{}127.0.0.1"{}}}\end{DoxyParamCaption})}
+
+
+
+Try and connect to the server. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em port} & The port to connect to \\
+\hline
+{\em address} & The address of the server \\
+\hline
+\end{DoxyParams}
+\begin{DoxyWarning}{Warning}
+This function will initialize network\+::out; be sure to close it before closing the application. 
+
+This function will initialize \doxylink{namespacenetwork_abb1abedc15e91c1412fa11f0b7edbb8f}{network\+::connection}; be sure to close it before closing the application. 
+
+You are responsible for closing sockets. 
+\end{DoxyWarning}
+\Hypertarget{namespacenetwork_af0880c416ff05d41d94d9421d45a50ef}\index{network@{network}!recv\_packet@{recv\_packet}}
+\index{recv\_packet@{recv\_packet}!network@{network}}
+\doxysubsubsection{\texorpdfstring{recv\_packet()}{recv\_packet()}}
+{\footnotesize\ttfamily \label{namespacenetwork_af0880c416ff05d41d94d9421d45a50ef} 
+\mbox{\hyperlink{structnetwork_1_1packet}{packet}} network\+::recv\+\_\+packet (\begin{DoxyParamCaption}\item[{const size\+\_\+t \&}]{timeout}{ = {\ttfamily 5}}\end{DoxyParamCaption})}
+
+
+
+Receive a packet. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em timeout} & How long to wait (seconds) before throwing an error. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The packet. 
+\end{DoxyReturn}
+\begin{DoxyRemark}{Remarks}
+If an error occured, the packet will have type network\+::meta\+::\+ERROR. Causes of this include the peer hanging up the connection or a timeout. 
+\end{DoxyRemark}
+\Hypertarget{namespacenetwork_a478e5696c416be715995595225c723d1}\index{network@{network}!recv\_string@{recv\_string}}
+\index{recv\_string@{recv\_string}!network@{network}}
+\doxysubsubsection{\texorpdfstring{recv\_string()}{recv\_string()}}
+{\footnotesize\ttfamily \label{namespacenetwork_a478e5696c416be715995595225c723d1} 
+std\+::string network\+::recv\+\_\+string (\begin{DoxyParamCaption}\item[{const size\+\_\+t \&}]{timeout}{ = {\ttfamily 5}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Receive a string. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em timeout} & A listening timeout before aborting. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+\+: The string. 
+\end{DoxyReturn}
+\Hypertarget{namespacenetwork_aece659d7f6b65d51b84c73a53c30f468}\index{network@{network}!recv\_value@{recv\_value}}
+\index{recv\_value@{recv\_value}!network@{network}}
+\doxysubsubsection{\texorpdfstring{recv\_value()}{recv\_value()}}
+{\footnotesize\ttfamily \label{namespacenetwork_aece659d7f6b65d51b84c73a53c30f468} 
+template$<$typename T $>$ \\
+const T network\+::recv\+\_\+value (\begin{DoxyParamCaption}\item[{const size\+\_\+t \&}]{timeout}{ = {\ttfamily 5}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Receive a value. 
+
+
+\begin{DoxyTemplParams}{Template Parameters}
+{\em T} & The datatype of the value. \\
+\hline
+\end{DoxyTemplParams}
+
+\begin{DoxyParams}{Parameters}
+{\em timeout} & A listening timeout before aborting. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The send value. 
+\end{DoxyReturn}
+
+\begin{DoxyExceptions}{Exceptions}
+{\em std\+::runtime\+\_\+error} & if an ERROR packet is sent. \\
+\hline
+\end{DoxyExceptions}
+\Hypertarget{namespacenetwork_a3812b264b0c3850ea556cc0dc4e337ca}\index{network@{network}!send\_packet@{send\_packet}}
+\index{send\_packet@{send\_packet}!network@{network}}
+\doxysubsubsection{\texorpdfstring{send\_packet()}{send\_packet()}}
+{\footnotesize\ttfamily \label{namespacenetwork_a3812b264b0c3850ea556cc0dc4e337ca} 
+int network\+::send\+\_\+packet (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structnetwork_1_1packet}{packet}} \&}]{p}{, }\item[{const size\+\_\+t \&}]{timeout}{ = {\ttfamily 5}}\end{DoxyParamCaption})}
+
+
+
+Send a packet. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em p} & The packet to send. \\
+\hline
+{\em timeout} & How long to wait (seconds) before throwing an error. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The return code of send. 
+\end{DoxyReturn}
+\Hypertarget{namespacenetwork_ae1bd80403173048a0fc3cca5666a5c2a}\index{network@{network}!send\_string@{send\_string}}
+\index{send\_string@{send\_string}!network@{network}}
+\doxysubsubsection{\texorpdfstring{send\_string()}{send\_string()}}
+{\footnotesize\ttfamily \label{namespacenetwork_ae1bd80403173048a0fc3cca5666a5c2a} 
+int network\+::send\+\_\+string (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{message}{, }\item[{const network\+::meta \&}]{type}{ = {\ttfamily DATA}, }\item[{const size\+\_\+t \&}]{timeout}{ = {\ttfamily 5}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Send a string of any size. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em message} & The string to send. \\
+\hline
+{\em type} & Whether you want to tag this data with something other than DATA. \\
+\hline
+{\em timeout} & A listening timeout before aborting. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if the string was sent succesfully. -\/1 Otherwise. 
+\end{DoxyReturn}
+\begin{DoxyRemark}{Remarks}
+This function simply breaks the string into packet sized blocks, and sends them across one at a time. The last package will be sent with a FINAL type, which will terminate the exchange. 
+
+A length package will be sent to trim excessive 0\textquotesingle{}s. 
+\end{DoxyRemark}
+\Hypertarget{namespacenetwork_a8ce2596c5463ea3c6ddbdda72ae810f4}\index{network@{network}!send\_value@{send\_value}}
+\index{send\_value@{send\_value}!network@{network}}
+\doxysubsubsection{\texorpdfstring{send\_value()}{send\_value()}}
+{\footnotesize\ttfamily \label{namespacenetwork_a8ce2596c5463ea3c6ddbdda72ae810f4} 
+template$<$typename T $>$ \\
+int network\+::send\+\_\+value (\begin{DoxyParamCaption}\item[{const T \&}]{value}{, }\item[{const network\+::meta \&}]{type}{ = {\ttfamily DATA}, }\item[{const size\+\_\+t \&}]{timeout}{ = {\ttfamily 5}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Send a value. 
+
+
+\begin{DoxyTemplParams}{Template Parameters}
+{\em T} & The datatype of the value. \\
+\hline
+\end{DoxyTemplParams}
+
+\begin{DoxyParams}{Parameters}
+{\em value} & The value to send. \\
+\hline
+{\em type} & Whether to tag the data with something. \\
+\hline
+{\em timeout} & A listening timeout before aborting. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if success, -\/1 if error. 
+\end{DoxyReturn}
+
+
+\doxysubsection{Variable Documentation}
+\Hypertarget{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08}\index{network@{network}!sock@{sock}}
+\index{sock@{sock}!network@{network}}
+\doxysubsubsection{\texorpdfstring{sock}{sock}}
+{\footnotesize\ttfamily \label{namespacenetwork_a3e76a7ce4fc95bf18e9ff1e65225ef08} 
+int network\+::sock = -\/1}
+
+
+
+The FD sock for when the program is in Listen mode. 
+
+\begin{DoxyRemark}{Remarks}
+This is not the FD that peers communicate over. 
+
+This is only used for the initial connection. 
+\end{DoxyRemark}

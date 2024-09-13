@@ -1,0 +1,123 @@
+\doxysection{aes Namespace Reference}
+\hypertarget{namespaceaes}{}\label{namespaceaes}\index{aes@{aes}}
+
+
+The namespace containing AES encryption/decryption functions.  
+
+
+\doxysubsubsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+namespace \mbox{\hyperlink{namespaceaes_1_1gcm}{gcm}}
+\begin{DoxyCompactList}\small\item\em Functions related to AES-\/\+GCM. \end{DoxyCompactList}\item 
+namespace \mbox{\hyperlink{namespaceaes_1_1gf}{gf}}
+\begin{DoxyCompactList}\small\item\em Helper utilities for working within a Galois Field 2\texorpdfstring{$\ast$}{*}\texorpdfstring{$\ast$}{*}8. \end{DoxyCompactList}\item 
+namespace \mbox{\hyperlink{namespaceaes_1_1key}{key}}
+\begin{DoxyCompactList}\small\item\em Manage the key. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \mbox{\hyperlink{classaes_1_1state}{state}}
+\begin{DoxyCompactList}\small\item\em An arbitrary collection of state arrays. \end{DoxyCompactList}\item 
+class \mbox{\hyperlink{classaes_1_1state__array}{state\+\_\+array}}
+\begin{DoxyCompactList}\small\item\em The state array is a 4x4 byte matrix to which AES operations are performed; also called a block. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \mbox{\hyperlink{namespaceaes_ac0a5720b2d03ef9c2967b683bb9883e9}{Cipher}} (const std\+::string \&in, const std\+::array$<$ uint64\+\_\+t, 4 $>$ \&k, const uint64\+\_\+t \&Nr)
+\begin{DoxyCompactList}\small\item\em Encrypt a message with AES. \end{DoxyCompactList}\item 
+std\+::string \mbox{\hyperlink{namespaceaes_a31f8f45354772a80f86f298f7a0c5739}{Inv\+Cipher}} (const std\+::string \&in, const std\+::array$<$ uint64\+\_\+t, 4 $>$ \&k, const uint64\+\_\+t \&Nr)
+\begin{DoxyCompactList}\small\item\em Decrypt a message with AES. \end{DoxyCompactList}\item 
+std\+::string \mbox{\hyperlink{namespaceaes_aa0147bc1291533ed0066f04b9ded820d}{Ctr}} (const std\+::string \&in, const std\+::array$<$ uint64\+\_\+t, 4 $>$ \&k, const uint64\+\_\+t Nr, uint64\+\_\+t nonce)
+\begin{DoxyCompactList}\small\item\em An implementation of AES in CTR mode. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The namespace containing AES encryption/decryption functions. 
+
+\begin{DoxyRemark}{Remarks}
+This code has been created with reference to\+: \href{https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf}{\texttt{ https\+://nvlpubs.\+nist.\+gov/nistpubs/\+FIPS/\+NIST.\+FIPS.\+197-\/upd1.\+pdf}} Herein referred to as "{}\+The Reference"{} 
+
+Another wonderful source is available here\+: \href{https://cs.ru.nl/~joan/papers/JDA_VRI_Rijndael_2002.pdf}{\texttt{ https\+://cs.\+ru.\+nl/\texorpdfstring{$\sim$}{\string~}joan/papers/\+JDA\+\_\+\+VRI\+\_\+\+Rijndael\+\_\+2002.\+pdf}} Which we will refer to as the "{}2002 Paper"{} 
+
+AES is block cipher which takes a message of arbitrary size, alongside a key, and returns a ciphertext that can be safely shared across an untrusted network. AES breaks down a message into a set of 16 byte blocks, and extends the key into a Key Schedule. It then repeatedly applies four operations to each block\+: Sub\+Bytes, Shift\+Rows, Mix\+Columns, and Add\+Round\+Key. The amount of repetitions (Or rounds) depends on the size of the key, with 10 rounds for a 128 bit key, 12 for 192, and 14 for 256. The Key Schedule creates a unique key for each column of the block, for each round Of the algorithm. Operations are typically performed in the Finite Field GF(256), Which is a field of 256 elements. The reason for this is performance. 
+
+This implemention supports three modes of AES\+: ECB, CTR, and GCM. ECB takes a message, and directly feeds it through AES to receive a ciphertext. CTR uses a nonce value and runs this through AES to generate a block--or pad--that is then XOR\textquotesingle{}d against The message in a similar fashion to the One-\/\+Time Pad. With an incrementing nonce, each Pad will be unique, eliminating a key issue of ECB. Finally, GCM is essentially a version of CTR that incorporates a MAC algorithm to provide integrity. 
+\end{DoxyRemark}
+
+
+\doxysubsection{Function Documentation}
+\Hypertarget{namespaceaes_ac0a5720b2d03ef9c2967b683bb9883e9}\index{aes@{aes}!Cipher@{Cipher}}
+\index{Cipher@{Cipher}!aes@{aes}}
+\doxysubsubsection{\texorpdfstring{Cipher()}{Cipher()}}
+{\footnotesize\ttfamily \label{namespaceaes_ac0a5720b2d03ef9c2967b683bb9883e9} 
+std\+::string aes\+::\+Cipher (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{in}{, }\item[{const std\+::array$<$ uint64\+\_\+t, 4 $>$ \&}]{k}{, }\item[{const uint64\+\_\+t \&}]{Nr}{}\end{DoxyParamCaption})}
+
+
+
+Encrypt a message with AES. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em in} & The input string. \\
+\hline
+{\em k} & The key \\
+\hline
+{\em Nr} & The number of rounds we should run (Determine how much of the key is used). \\
+\hline
+\end{DoxyParams}
+\begin{DoxyRemark}{Remarks}
+This function is intentionally a verbatim translation of the pseudo-\/code outlined in Algorithm 1 of the Reference. 
+\end{DoxyRemark}
+\begin{DoxyWarning}{Warning}
+This function, on its own is no different from ECB! 
+\end{DoxyWarning}
+\Hypertarget{namespaceaes_aa0147bc1291533ed0066f04b9ded820d}\index{aes@{aes}!Ctr@{Ctr}}
+\index{Ctr@{Ctr}!aes@{aes}}
+\doxysubsubsection{\texorpdfstring{Ctr()}{Ctr()}}
+{\footnotesize\ttfamily \label{namespaceaes_aa0147bc1291533ed0066f04b9ded820d} 
+std\+::string aes\+::\+Ctr (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{in}{, }\item[{const std\+::array$<$ uint64\+\_\+t, 4 $>$ \&}]{k}{, }\item[{const uint64\+\_\+t}]{Nr}{, }\item[{uint64\+\_\+t}]{nonce}{}\end{DoxyParamCaption})}
+
+
+
+An implementation of AES in CTR mode. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em in} & The input string. \\
+\hline
+{\em k} & The key. \\
+\hline
+{\em Nr} & The number of rounds to perform. \\
+\hline
+{\em nonce} & The nonce value to use. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyRemark}{Remarks}
+CTR mode generates a OTP that is then XOR\textquotesingle{}ed to the message. Therefore, Encryption/\+Decryption Uses the same function. 
+\end{DoxyRemark}
+\Hypertarget{namespaceaes_a31f8f45354772a80f86f298f7a0c5739}\index{aes@{aes}!InvCipher@{InvCipher}}
+\index{InvCipher@{InvCipher}!aes@{aes}}
+\doxysubsubsection{\texorpdfstring{InvCipher()}{InvCipher()}}
+{\footnotesize\ttfamily \label{namespaceaes_a31f8f45354772a80f86f298f7a0c5739} 
+std\+::string aes\+::\+Inv\+Cipher (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{in}{, }\item[{const std\+::array$<$ uint64\+\_\+t, 4 $>$ \&}]{k}{, }\item[{const uint64\+\_\+t \&}]{Nr}{}\end{DoxyParamCaption})}
+
+
+
+Decrypt a message with AES. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em in} & The input string. \\
+\hline
+{\em k} & The key \\
+\hline
+{\em Nr} & The number of rounds to run. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyRemark}{Remarks}
+This function is intentionally a verbatim translation of the pseudo-\/code outlined in Algorithm 3 of the Reference. 
+\end{DoxyRemark}
+\begin{DoxyWarning}{Warning}
+This function, on its own is no different from ECB! 
+\end{DoxyWarning}
